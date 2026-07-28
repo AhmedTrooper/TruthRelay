@@ -32,8 +32,9 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
   re-authored in transit.
 - **HTTP + opportunistic local mesh** — talks to the relay over any IP link
   (Wi-Fi, satellite, fiber) and, when no internet is available, syncs over
-  Wi-Fi Direct between nearby phones so a bulletin from one corner of the
-  affected area can reach another corner that's been offline for hours.
+  Wi-Fi Direct, BLE, or a local-only access point between nearby phones so a
+  bulletin from one corner of the affected area can reach another corner that's
+  been offline for hours.
 - All three components produce **byte-identical canonical JSON** before
   signing, so signatures cross language boundaries cleanly.
 
@@ -47,7 +48,7 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | Peer-driven coordinator (concurrency + backoff) | ✅ |
 | BLE (discovery — 16-byte TR1 beacons)    | discovery ✅ |
 | BLE (transport — chunked, MTU-aware)     | transport ✅ |
-| Local-only hotspot (auto-fallback)       | coming       |
+| Local-only hotspot (auto-fallback)       | transport ✅ |
 | Relay forwarding (peer outbox via uplink) | coming       |
 | Ed25519 re-verification on every hop     | coming       |
 

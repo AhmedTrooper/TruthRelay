@@ -61,6 +61,19 @@ bind to `flutter_blue_plus` GATT without dragging the plugin into unit
 tests. The same `MeshTransport` interface that the Wi-Fi Direct transport
 implements is reused unchanged.
 
+When neither Wi-Fi Direct nor BLE can carry the volume of traffic —
+older devices, restrictive ROMs, missing permissions — one phone can act
+as a **local-only access point** via Android's
+`WifiManager.startLocalOnlyHotspot()`. Other phones join the AP using
+`WifiConfiguration`, then run the same `MeshTransport` session as the
+Wi-Fi Direct transport. The framing is intentionally trivial: each
+`MeshTransport` send produces a 4-byte big-endian length prefix followed
+by UTF-8 payload bytes; outbound frames are split into 16 KiB chunks so
+a single large send can never deadlock the kernel's TCP send buffer on
+a slow receiver. A `HotspotChannel` byte-pipe interface keeps the
+framing/reassembly logic pure Dart so unit tests cover the whole stack
+without touching real sockets.
+
 The **Axum relay** is a single Rust binary with a SQLite WAL database.
 It exposes three primitives: `POST /api/v1/bulletins`, `POST /api/v1/requests`,
 and `POST /api/v1/sync` for bulk push/pull. Bulletins carry an Ed25519
