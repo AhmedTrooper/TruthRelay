@@ -33,10 +33,14 @@ is available. Phones advertise themselves over BLE; nearby phones form a
 Wi-Fi Direct group, swap bloom-filter inventories plus a compact id list
 (via a `MeshHello` envelope), exchange the bulletins each side is missing
 as signed JSON `MeshData` envelopes, and ack each one with `MeshAck`.
-Every bulletin is re-verified against the moderator's registered public
-key on every hop — VERIFIED status is computed locally, never trusted
-from a peer's word. A 32-byte packet id per envelope, persisted in a tiny
-`mesh_seen` Hive box, deduplicates retransmits across the gossip.
+A 32-byte packet id per envelope, persisted in a tiny `mesh_seen` Hive
+box, deduplicates retransmits across the gossip. A peer-driven
+`MeshCoordinator` watches for newly-discovered peers and spawns a
+dedicated `MeshSession` per peer with a configurable concurrency cap and
+5-minute per-peer backoff, so the same neighbour can't trigger a tight
+loop of re-syncs. Every bulletin is re-verified against the moderator's
+registered public key on every hop — VERIFIED status is computed locally,
+never trusted from a peer's word.
 
 The **Axum relay** is a single Rust binary with a SQLite WAL database.
 It exposes three primitives: `POST /api/v1/bulletins`, `POST /api/v1/requests`,

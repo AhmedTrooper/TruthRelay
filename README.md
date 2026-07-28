@@ -44,6 +44,7 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | Wi-Fi Direct (BLE discovery + group)     | discovery ✅ |
 | Wi-Fi Direct (transport — handshake/sync)| transport ✅ |
 | Mesh session state machine (hello/request/data/ack) | ✅ |
+| Peer-driven coordinator (concurrency + backoff) | ✅ |
 | BLE (small-payload fallback)             | coming       |
 | Local-only hotspot (auto-fallback)       | coming       |
 | Relay forwarding (peer outbox via uplink) | coming       |

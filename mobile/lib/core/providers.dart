@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/bulletins/data/bulletin_repository.dart';
+import '../features/mesh/data/mesh_coordinator.dart' as coord;
+import '../features/mesh/data/wifi_direct_discovery.dart';
 import '../features/requests/data/request_repository.dart';
 import '../features/settings/data/moderator_settings_repository.dart';
 import '../features/sync/data/api_client.dart';
@@ -36,4 +40,39 @@ final connectivitySyncProvider = Provider<ConnectivitySyncCoordinator>((ref) {
 
 final pendingOutboxCountProvider = FutureProvider.autoDispose<int>((ref) async {
   return ref.watch(outboxRepoProvider).countPending();
+});
+
+/// Mesh peer discovery. Started once at app boot.
+final wifiDirectDiscoveryProvider = Provider<WifiDirectDiscovery>((ref) {
+  final d = WifiDirectDiscovery();
+  ref.onDispose(d.dispose);
+  return d;
+});
+
+/// Mesh sync coordinator. Listens to discovery peer events and runs a
+/// session for each one, with per-peer backoff + concurrency cap.
+final meshCoordinatorProvider = Provider<coord.MeshCoordinator>((ref) {
+  final discovery = ref.watch(wifiDirectDiscoveryProvider);
+  // No-op factory for the default provider — actual transports are
+  // wired by main.dart at app boot via `MeshCoordinator.bind(...)`. This
+  // keeps the type non-nullable for downstream consumers.
+  final controller = StreamController<coord.MeshPeer>();
+  final sub = discovery.peers.listen((peers) {
+    for (final peer in peers) {
+      controller.add(coord.MeshPeer(
+        deviceAddress: peer.deviceAddress,
+        deviceName: peer.deviceName,
+      ));
+    }
+  });
+  final coordinator = coord.MeshCoordinator(
+    peerStream: () => controller.stream,
+    buildSession: (peer) async => null,
+  );
+  ref.onDispose(() async {
+    await sub.cancel();
+    await coordinator.stop();
+    await controller.close();
+  });
+  return coordinator;
 });

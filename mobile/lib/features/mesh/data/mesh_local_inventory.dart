@@ -124,6 +124,11 @@ abstract class MeshLocalInventorySource {
 
   /// Builds a snapshot of the current state.
   Future<MeshLocalInventory> snapshot();
+
+  /// Snapshot of every id (bulletin sha256 + request UUID) we currently
+  /// hold. Used by the coordinator to pre-fill the [MeshSession.localIds]
+  /// so the session can advertise and serve without re-enumerating.
+  Future<List<String>> currentIds();
 }
 
 /// Production source: reads from the real repositories.
@@ -174,6 +179,16 @@ class RepositoryInventorySource implements MeshLocalInventorySource {
       default:
         throw ArgumentError.value(item.kind, 'item.kind', 'unknown mesh item kind');
     }
+  }
+
+  @override
+  Future<List<String>> currentIds() async {
+    final bs = await bulletins.list(limit: 10000);
+    final rs = await requests.list(limit: 10000);
+    return <String>[
+      for (final b in bs) b.sha256 ?? b.id,
+      for (final r in rs) r.id,
+    ];
   }
 
   @override
@@ -237,6 +252,9 @@ class InMemoryInventorySource implements MeshLocalInventorySource {
     _items[item.id] = item;
     return true;
   }
+
+  @override
+  Future<List<String>> currentIds() async => _items.keys.toList(growable: false);
 
   @override
   Future<MeshLocalInventory> snapshot() async {
