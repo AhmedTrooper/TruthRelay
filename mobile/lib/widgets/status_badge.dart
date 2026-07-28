@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
 
+/// Three-state badge — see [StatusBadgeKind].
+///
+/// `verified=true` shows the green "VERIFIED SAFE" pip. The widget never
+/// shows both states; `kind` is used as the primary label and `verified`
+/// upgrades it. Callers that want the new "quarantined" state should set
+/// [quarantined] which forces an amber pill regardless of [kind] or
+/// [verified].
 class StatusBadge extends StatelessWidget {
   final String kind;
   final bool verified;
-  const StatusBadge({super.key, required this.kind, this.verified = false});
+  final bool quarantined;
+  const StatusBadge({
+    super.key,
+    required this.kind,
+    this.verified = false,
+    this.quarantined = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +40,7 @@ class StatusBadge extends StatelessWidget {
   }
 
   (Color, Color, String) _spec() {
+    if (quarantined) return (const Color(0xFF78350f), const Color(0xFFfbbf24), 'QUARANTINED');
     if (verified) return (const Color(0xFF065f46), const Color(0xFF6ee7b7), 'VERIFIED');
     switch (kind) {
       case 'VerifiedUpdate':

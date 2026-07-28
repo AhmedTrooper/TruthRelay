@@ -24,8 +24,14 @@ class DetailView extends ConsumerWidget {
           return _Scaffold(
             title: b.title,
             body: b.body,
-            badge: StatusBadge(kind: b.kind, verified: b.isVerifiedLocally),
-            extra: 'Status: ${b.status}\nReceived: ${b.receivedAt}',
+            badge: StatusBadge(
+              kind: b.kind,
+              verified: b.isVerifiedLocally,
+              quarantined: b.signatureVerified == false,
+            ),
+            extra: 'Status: ${b.status}\nReceived: ${b.receivedAt}'
+                '${b.signatureVerified == false ? "\nSignature FAILED local re-verification" : ""}'
+                '${b.signatureVerified == true ? "\nSignature OK — local re-verification passed" : ""}',
           );
         },
       );

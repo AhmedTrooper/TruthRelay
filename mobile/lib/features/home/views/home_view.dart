@@ -114,7 +114,14 @@ class _BulletinsTab extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    StatusBadge(kind: b.kind, verified: b.isVerifiedLocally),
+                    StatusBadge(
+                      kind: b.kind,
+                      verified: b.isVerifiedLocally,
+                      // signatureVerified == false (and the bulletin did
+                      // carry a sig + moderator id) ⇒ peer-supplied but
+                      // signature check failed. Show QUARANTINED.
+                      quarantined: b.signatureVerified == false,
+                    ),
                     const SizedBox(height: 4),
                     Text(b.moderatorName ?? '—', style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],

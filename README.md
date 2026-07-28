@@ -51,6 +51,8 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | Local-only hotspot (auto-fallback)       | transport ✅ |
 | Relay forwarding (peer outbox via uplink) | endpoint ✅ |
 | Ed25519 re-verification on every peer hop     | ✅        |
+| Peer-sync UI (transport label, counters, sync now) | ✅ |
+| Demo script (end-to-end offline workflow)   | ✅        |
 
 ### Web admin status
 
@@ -63,7 +65,7 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | Bulletin / Request search + kind filter    | ✅        |
 | Relay health probe + latency chip          | ✅        |
 | Auto-refresh every 60s (toggleable)        | ✅        |
-| Peer-outbox forwarding UI (wired to commit 12) | coming |
+| Peer-outbox forwarding UI (wired to commit 12) | ✅ |
 | Vitest unit suite (theme, StatCard)        | ✅        |
 
 ## Architecture
