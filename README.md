@@ -51,6 +51,20 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | Relay forwarding (peer outbox via uplink) | coming       |
 | Ed25519 re-verification on every hop     | coming       |
 
+### Web admin status
+
+| Feature                                    | Status   |
+|--------------------------------------------|----------|
+| Light/dark theme toggle (persisted)        | ✅        |
+| Dashboard KPIs with freshness delta        | ✅        |
+| Bulletin-mix donut (pure SVG)              | ✅        |
+| Signed-bulletin inspector (canonical JSON + sha256 + sig) | ✅ |
+| Bulletin / Request search + kind filter    | ✅        |
+| Relay health probe + latency chip          | ✅        |
+| Auto-refresh every 60s (toggleable)        | ✅        |
+| Peer-outbox forwarding UI (wired to commit 12) | coming |
+| Vitest unit suite (theme, StatCard)        | ✅        |
+
 ## Architecture
 
 ```
@@ -78,7 +92,7 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | Folder    | Stack                                   | Purpose                              |
 |-----------|------------------------------------------|--------------------------------------|
 | `api/`    | Rust + Axum + SQLite + ed25519-dalek    | Relay server + `keygen` CLI          |
-| `web/`    | Vue 3 + Naive UI + Vite PWA + bun       | Admin dashboard (installable PWA)    |
+| `web/`    | Vue 3 + Naive UI + Vite PWA + bun       | Admin dashboard (installable PWA, dark/light, Vitest) |
 | `mobile/` | Flutter (Android) + Riverpod + Hive     | Citizen-side app                     |
 
 ## Quickstart — Docker (one command)

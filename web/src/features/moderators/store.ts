@@ -70,6 +70,13 @@ export const useModeratorStore = defineStore('moderator', () => {
     saveStored(null);
   }
 
+  async function refresh() {
+    // The relay does not yet expose a list-moderators endpoint; the
+    // stored moderator is hydrated from localStorage on construction so
+    // there is nothing to fetch here. Kept for view-mount symmetry with
+    // the other stores.
+  }
+
   return {
     stored,
     serverView,
@@ -78,5 +85,6 @@ export const useModeratorStore = defineStore('moderator', () => {
     setFromKeygen,
     register,
     clear,
+    refresh,
   };
 });

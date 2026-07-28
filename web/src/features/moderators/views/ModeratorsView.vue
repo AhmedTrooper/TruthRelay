@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import {
   NCard,
   NInput,
@@ -44,11 +44,27 @@ async function save() {
 }
 
 const registered = computed(() => !!moderator.stored?.id);
+const shortKey = computed(() =>
+  moderator.stored?.public_key_b64
+    ? `${moderator.stored.public_key_b64.slice(0, 16)}…`
+    : '',
+);
+
+onMounted(async () => {
+  await moderator.refresh();
+});
 </script>
 
 <template>
-  <div class="space-y-6 max-w-2xl">
-    <h1 class="text-2xl font-semibold">Moderators</h1>
+  <div class="space-y-6 max-w-3xl animate-fade-in">
+    <header>
+      <h1 class="text-2xl font-semibold m-0 text-slate-900 dark:text-slate-50">
+        Moderators
+      </h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 m-0 mt-1">
+        Mint a keypair on the relay, import it here, then sign bulletins with it.
+      </p>
+    </header>
 
     <NAlert v-if="!moderator.stored" type="info" title="No keypair loaded">
       Run <code class="text-xs">cargo run -- keygen --name your-name</code> in the <code>api/</code> folder,
@@ -57,22 +73,22 @@ const registered = computed(() => !!moderator.stored?.id);
 
     <NCard v-if="moderator.stored" title="Current keypair">
       <NSpace vertical>
-        <div>
-          <span class="text-slate-400 text-sm">Name: </span>
-          <NTag>{{ moderator.stored.name }}</NTag>
+        <div class="flex items-center gap-2">
+          <span class="text-slate-500 dark:text-slate-400 text-sm">Name:</span>
+          <NTag round>{{ moderator.stored.name }}</NTag>
+          <NTag v-if="registered" type="success" size="small">Registered on server</NTag>
+          <NTag v-else type="warning" size="small">Local only</NTag>
         </div>
         <div>
-          <span class="text-slate-400 text-sm">Status: </span>
-          <NTag v-if="registered" type="success">Registered on server</NTag>
-          <NTag v-else type="warning">Local only — click "Register on server"</NTag>
+          <span class="text-slate-500 dark:text-slate-400 text-sm">Moderator ID:</span>
+          <code class="text-xs ml-1">{{ moderator.stored.id || '(pending)' }}</code>
         </div>
         <div>
-          <span class="text-slate-400 text-sm">Moderator ID: </span>
-          <code class="text-xs">{{ moderator.stored.id || '(pending)' }}</code>
+          <span class="text-slate-500 dark:text-slate-400 text-sm">Public key:</span>
+          <code class="text-xs ml-1 break-all">{{ moderator.stored.public_key_b64 }}</code>
         </div>
-        <div>
-          <span class="text-slate-400 text-sm">Public key: </span>
-          <code class="text-xs break-all">{{ moderator.stored.public_key_b64 }}</code>
+        <div class="text-xs text-slate-500 dark:text-slate-400">
+          Fingerprint: <code class="font-mono">{{ shortKey }}</code>
         </div>
         <NSpace>
           <NButton v-if="!registered" type="primary" :loading="moderator.busy" @click="moderator.register()">
@@ -96,9 +112,9 @@ const registered = computed(() => !!moderator.stored?.id);
           <NButton v-if="parsed" type="primary" @click="save">Save & register</NButton>
         </NSpace>
         <NAlert v-if="parseError" type="error" :title="parseError" />
-        <div v-if="parsed" class="text-xs text-slate-400">
-          <div>Name: {{ parsed.name }}</div>
-          <div class="break-all">Public key: {{ parsed.public_key_b64 }}</div>
+        <div v-if="parsed" class="text-xs text-slate-500 dark:text-slate-400 space-y-1">
+          <div>Name: <span class="text-slate-700 dark:text-slate-200">{{ parsed.name }}</span></div>
+          <div class="break-all">Public key: <code>{{ parsed.public_key_b64 }}</code></div>
         </div>
       </NSpace>
     </NCard>

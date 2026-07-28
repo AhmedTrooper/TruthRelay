@@ -74,6 +74,14 @@ that the relay uses for verification runs in the browser, so the signature
 is computed over the exact bytes the server will hash. Verified bulletins
 flow back into the mobile feed on the next sync.
 
+The dashboard gives a 30-second read on the relay: KPI tiles with
+freshness deltas, a pure-SVG donut of the bulletin-kind mix, a
+signed-bulletin inspector that surfaces the canonical JSON bytes, the
+`sha256` hash, and the Ed25519 signature that the server will verify. A
+relay-health probe card measures the round-trip to `/api/v1/stats`,
+auto-refreshes every 60 s when armed, and the theme persists across
+sessions so the demo runs in either light or dark mode.
+
 **Trust model.** Cryptographic, not centralized. A bulletin is *VERIFIED SAFE*
 only if a registered moderator's Ed25519 signature passes on the server.
 Unverified requests still travel — they're tagged *UNVERIFIED NEED* so
