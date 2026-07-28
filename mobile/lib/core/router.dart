@@ -9,10 +9,10 @@ import '../features/sync/views/sync_view.dart';
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/', builder: (_, __) => const HomeView()),
-    GoRoute(path: '/compose', builder: (_, __) => const ComposeView()),
-    GoRoute(path: '/sync', builder: (_, __) => const SyncView()),
-    GoRoute(path: '/settings', builder: (_, __) => const SettingsView()),
+    GoRoute(path: '/', builder: (_, _) => const HomeView()),
+    GoRoute(path: '/compose', builder: (_, _) => const ComposeView()),
+    GoRoute(path: '/sync', builder: (_, _) => const SyncView()),
+    GoRoute(path: '/settings', builder: (_, _) => const SettingsView()),
     GoRoute(
       path: '/detail/bulletin/:id',
       builder: (_, state) => DetailView(kind: DetailKind.bulletin, id: state.pathParameters['id']!),

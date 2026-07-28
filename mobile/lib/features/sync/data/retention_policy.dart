@@ -9,6 +9,7 @@
 /// The policy is pure (no I/O) and clock-injectable so it can be unit-tested
 /// deterministically. Callers (the per-feature repositories) invoke
 /// [prune] on every upsert and pass in the candidates + a clock.
+library;
 
 import '../../bulletins/models/bulletin.dart' as b;
 import '../../requests/models/help_request.dart' as r;

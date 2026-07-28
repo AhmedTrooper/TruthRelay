@@ -2,6 +2,8 @@
 /// produce a base64 signature, and assert the resulting bytes are non-empty.
 /// (End-to-end Rust verification is exercised by the bash e2e script that
 ///  talks to the running Axum server.)
+library;
+
 import 'dart:convert';
 import 'dart:typed_data';
 

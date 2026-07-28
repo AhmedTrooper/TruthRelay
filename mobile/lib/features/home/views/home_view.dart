@@ -104,7 +104,7 @@ class _BulletinsTab extends ConsumerWidget {
           },
           child: ListView.separated(
             itemCount: items.length,
-            separatorBuilder: (_, __) => const Divider(height: 0),
+            separatorBuilder: (_, _) => const Divider(height: 0),
             itemBuilder: (_, i) {
               final b = items[i];
               return ListTile(
@@ -149,7 +149,7 @@ class _RequestsTab extends ConsumerWidget {
           },
           child: ListView.separated(
             itemCount: items.length,
-            separatorBuilder: (_, __) => const Divider(height: 0),
+            separatorBuilder: (_, _) => const Divider(height: 0),
             itemBuilder: (_, i) {
               final r = items[i];
               return ListTile(

@@ -1,4 +1,5 @@
 /// Unit tests for the versioned mesh wire format.
+library;
 
 import 'dart:convert';
 import 'dart:typed_data';

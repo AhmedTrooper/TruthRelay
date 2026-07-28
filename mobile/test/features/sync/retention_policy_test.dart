@@ -1,5 +1,6 @@
 /// Unit tests for the local retention policy used by the offline-first
 /// mesh cache. Deterministic via an injected clock.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/bulletins/models/bulletin.dart';

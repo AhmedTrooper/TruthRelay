@@ -11,6 +11,7 @@
 /// Because `Workmanager` invokes the entry point in a fresh isolate, we
 /// cannot share Riverpod providers with the foreground app. The background
 /// entry point rebuilds the necessary services from scratch.
+library;
 
 import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
@@ -31,7 +32,6 @@ Future<void> initBackgroundSync() async {
   try {
     await Workmanager().initialize(
       callbackDispatcher,
-      isInDebugMode: kDebugMode,
     );
     await Workmanager().registerPeriodicTask(
       backgroundSyncTaskName,

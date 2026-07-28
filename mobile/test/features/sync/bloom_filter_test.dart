@@ -1,4 +1,5 @@
 /// Unit tests for the in-tree Bloom filter used by mesh peer advertisements.
+library;
 
 import 'dart:convert';
 import 'dart:typed_data';

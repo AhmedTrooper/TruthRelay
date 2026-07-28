@@ -13,6 +13,7 @@
 ///
 /// The codec is transport-agnostic: subsequent commits will bind it to
 /// Wi-Fi Direct sockets, BLE GATT, and TCP-over-hotspot.
+library;
 
 import 'dart:convert';
 import 'dart:typed_data';

@@ -9,6 +9,7 @@
 /// We do NOT call Workmanager itself here — the plugin uses platform
 /// channels that are unavailable in pure-Dart unit tests. The integration
 /// is covered by manual + instrumented tests on a real device.
+library;
 
 import 'dart:io';
 

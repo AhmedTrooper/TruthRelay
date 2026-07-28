@@ -1,5 +1,6 @@
 /// Ed25519 signing using the `cryptography` package.
 /// Compatible with the Rust backend's verifier.
+library;
 
 import 'dart:convert';
 import 'dart:math';

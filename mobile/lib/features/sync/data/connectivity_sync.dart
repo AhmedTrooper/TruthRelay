@@ -8,6 +8,7 @@
 /// This file owns no transport — it only orchestrates. The injected
 /// [stream] and [onOnline] callback make the coordinator fully unit-testable
 /// without requiring a real device or plugin platform channel.
+library;
 
 import 'dart:async';
 

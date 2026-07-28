@@ -12,6 +12,7 @@
 ///
 /// `add` and `mightContain` accept any 32-byte content hash (sha256 is the
 /// canonical input in this app).
+library;
 
 import 'dart:typed_data';
 

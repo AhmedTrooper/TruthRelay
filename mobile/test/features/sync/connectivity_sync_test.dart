@@ -1,4 +1,5 @@
 /// Unit tests for the connectivity-driven server sync coordinator.
+library;
 
 import 'dart:async';
 import 'dart:io';

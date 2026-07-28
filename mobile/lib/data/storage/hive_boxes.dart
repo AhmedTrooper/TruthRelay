@@ -1,5 +1,6 @@
 /// Hive bootstrap. Opens every box the app uses. Each feature owns its
 /// own box key; this module only handles initialization order.
+library;
 
 import 'package:hive_flutter/hive_flutter.dart';
 

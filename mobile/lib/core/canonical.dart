@@ -8,6 +8,7 @@
 ///   - Keys sorted alphabetically.
 ///   - No trailing newline.
 ///   - No whitespace between separators.
+library;
 
 import 'dart:convert' show jsonEncode;
 
