@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import {
   NCard,
   NButton,
@@ -8,6 +8,7 @@ import {
   NInput,
   NTag,
   NSwitch,
+  NEmpty,
   useMessage,
 } from 'naive-ui';
 import dayjs from 'dayjs';
@@ -38,6 +39,62 @@ const forwardingBusy = ref(false);
 const lastForwardResult = ref<string | null>(null);
 const lastForwardError = ref<string | null>(null);
 const lastForwardPayload = ref<any | null>(null);
+
+const AUDIT_KEY = 'truthrelay.mesh-forward.audit';
+const AUDIT_LIMIT = 20;
+
+interface ForwardAuditEntry {
+  ts: string;
+  bulletins: number;
+  requests: number;
+  accepted: number;
+  duplicates: number;
+  rejected: number;
+  ok: boolean;
+}
+
+function loadAudit(): ForwardAuditEntry[] {
+  try {
+    const raw = localStorage.getItem(AUDIT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+const audit = ref<ForwardAuditEntry[]>(loadAudit());
+
+function recordAudit(entry: ForwardAuditEntry) {
+  // Newest first; cap at AUDIT_LIMIT.
+  const next = [entry, ...audit.value].slice(0, AUDIT_LIMIT);
+  audit.value = next;
+  try {
+    localStorage.setItem(AUDIT_KEY, JSON.stringify(next));
+  } catch {
+    /* localStorage may be unavailable (Safari private mode); fall through. */
+  }
+}
+
+function clearAudit() {
+  audit.value = [];
+  try {
+    localStorage.removeItem(AUDIT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+watch(audit, (val) => {
+  // Persist on every change — localStorage write is cheap and keeps the
+  // audit log live across reloads.
+  try {
+    localStorage.setItem(AUDIT_KEY, JSON.stringify(val));
+  } catch {
+    /* ignore */
+  }
+});
 
 async function pull() {
   busy.value = true;
@@ -89,10 +146,28 @@ async function forwardPeerOutbox() {
     lastForwardPayload.value = data;
     lastForwardResult.value = `Forwarded ${bulletins_.length} bulletins, ${requests_.length} requests — accepted=${data.accepted}, duplicates=${data.duplicates}, rejected=${data.rejected}.`;
     message.success('Forwarded to relay');
+    recordAudit({
+      ts: new Date().toISOString(),
+      bulletins: bulletins_.length,
+      requests: requests_.length,
+      accepted: data.accepted,
+      duplicates: data.duplicates,
+      rejected: data.rejected,
+      ok: true,
+    });
     await Promise.all([bulletins.refresh(), requests.refresh()]);
   } catch (e: any) {
     lastForwardError.value = e?.message ?? String(e);
     message.error(lastForwardError.value ?? 'unknown error');
+    recordAudit({
+      ts: new Date().toISOString(),
+      bulletins: bulletins_.length,
+      requests: requests_.length,
+      accepted: 0,
+      duplicates: 0,
+      rejected: bulletins_.length + requests_.length,
+      ok: false,
+    });
   } finally {
     forwardingBusy.value = false;
   }
@@ -251,6 +326,58 @@ const formattedServerTime = computed(() => {
           </summary>
           <pre class="mt-2 max-h-80 overflow-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 font-mono text-[11px]">{{ JSON.stringify(lastForwardPayload, null, 2) }}</pre>
         </details>
+      </NSpace>
+    </NCard>
+
+    <NCard title="Forward audit log">
+      <template #header-extra>
+        <NButton v-if="audit.length" size="tiny" tertiary @click="clearAudit">
+          Clear
+        </NButton>
+      </template>
+      <NSpace vertical>
+        <p class="text-xs text-slate-500 dark:text-slate-400 m-0">
+          Last {{ AUDIT_LIMIT }} forward attempts made through this browser. Stored
+          locally — never sent to the relay.
+        </p>
+        <div v-if="!audit.length" class="py-2">
+          <NEmpty size="small" description="No forwards yet from this device" />
+        </div>
+        <table v-else class="w-full text-xs">
+          <thead>
+            <tr class="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+              <th class="py-2 pr-3">When</th>
+              <th class="py-2 pr-3">Items</th>
+              <th class="py-2 pr-3">Accepted</th>
+              <th class="py-2 pr-3">Duplicates</th>
+              <th class="py-2 pr-3">Rejected</th>
+              <th class="py-2 pr-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(row, i) in audit"
+              :key="i"
+              class="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition"
+            >
+              <td class="py-2 pr-3 text-slate-600 dark:text-slate-300 tabular-nums">
+                {{ dayjs(row.ts).format('MMM D HH:mm:ss') }}
+              </td>
+              <td class="py-2 pr-3 tabular-nums">
+                {{ row.bulletins + row.requests }}
+                <span class="text-slate-500">({{ row.bulletins }}b + {{ row.requests }}r)</span>
+              </td>
+              <td class="py-2 pr-3 text-emerald-600 dark:text-emerald-300 tabular-nums">{{ row.accepted }}</td>
+              <td class="py-2 pr-3 text-slate-500 dark:text-slate-400 tabular-nums">{{ row.duplicates }}</td>
+              <td class="py-2 pr-3 text-rose-600 dark:text-rose-300 tabular-nums">{{ row.rejected }}</td>
+              <td class="py-2 pr-3">
+                <NTag :type="row.ok ? 'success' : 'error'" size="small" round>
+                  {{ row.ok ? 'ok' : 'failed' }}
+                </NTag>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </NSpace>
     </NCard>
   </div>

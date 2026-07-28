@@ -6,7 +6,7 @@ import {
   NSpace,
   NTag,
   NInput,
-  NSelect,
+  NSwitch,
   type DataTableColumns,
 } from 'naive-ui';
 import { storeToRefs } from 'pinia';
@@ -21,29 +21,36 @@ const { items, loading } = storeToRefs(store);
 const showModal = ref(false);
 const search = ref('');
 const kindFilter = ref<string>('');
+const signedOnly = ref(false);
 
 onMounted(() => store.refresh());
 
-const kindOptions = [
-  { label: 'All kinds', value: '' },
-  { label: 'Verified update', value: 'VerifiedUpdate' },
-  { label: 'Debunk', value: 'Debunk' },
-  { label: 'Blood', value: 'Blood' },
-  { label: 'Missing', value: 'Missing' },
-  { label: 'Supply', value: 'Supply' },
+const kindChips = [
+  { label: 'All', value: '', accent: 'from-slate-500/10 to-slate-500/0' },
+  { label: 'Verified update', value: 'VerifiedUpdate', accent: 'from-sky-500/10 to-sky-500/0' },
+  { label: 'Debunk', value: 'Debunk', accent: 'from-rose-500/10 to-rose-500/0' },
+  { label: 'Blood', value: 'Blood', accent: 'from-rose-500/10 to-rose-500/0' },
+  { label: 'Missing', value: 'Missing', accent: 'from-amber-500/10 to-amber-500/0' },
+  { label: 'Supply', value: 'Supply', accent: 'from-violet-500/10 to-violet-500/0' },
 ];
 
 const filtered = computed(() => {
   const needle = search.value.trim().toLowerCase();
   return items.value.filter((b) => {
     if (kindFilter.value && b.kind !== kindFilter.value) return false;
+    if (signedOnly.value && !b.signature_b64) return false;
     if (!needle) return true;
     return (
       b.title.toLowerCase().includes(needle) ||
-      b.body.toLowerCase().includes(needle)
+      b.body.toLowerCase().includes(needle) ||
+      (b.moderator_name ?? '').toLowerCase().includes(needle)
     );
   });
 });
+
+function isVerified(b: BulletinView): boolean {
+  return b.kind === 'VerifiedUpdate';
+}
 
 const columns: DataTableColumns<BulletinView> = [
   {
@@ -59,7 +66,7 @@ const columns: DataTableColumns<BulletinView> = [
     title: 'Kind',
     key: 'kind',
     width: 160,
-    render: (row) => h(StatusBadge, { kind: row.kind, verified: row.kind === 'VerifiedUpdate' }),
+    render: (row) => h(StatusBadge, { kind: row.kind, verified: isVerified(row) }),
   },
   {
     title: 'Moderator',
@@ -111,22 +118,39 @@ const columns: DataTableColumns<BulletinView> = [
       </NSpace>
     </header>
 
-    <div class="card-soft p-4 flex flex-wrap items-center gap-3">
-      <NInput
-        v-model:value="search"
-        placeholder="Search title or body…"
-        clearable
-        class="max-w-xs"
-      />
-      <NSelect
-        v-model:value="kindFilter"
-        :options="kindOptions"
-        placeholder="Filter by kind"
-        style="width: 200px"
-      />
-      <span class="text-xs text-slate-500 dark:text-slate-400 ml-auto tabular-nums">
-        Showing {{ filtered.length }} of {{ items.length }}
-      </span>
+    <div class="card-soft p-4 space-y-4">
+      <div class="flex items-center flex-wrap gap-2">
+        <button
+          v-for="c in kindChips"
+          :key="c.value"
+          type="button"
+          class="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide border transition focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          :class="
+            kindFilter === c.value
+              ? `bg-gradient-to-br ${c.accent} border-emerald-400 dark:border-emerald-400 text-slate-900 dark:text-slate-50`
+              : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+          "
+          @click="kindFilter = c.value"
+        >
+          {{ c.label }}
+        </button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <NInput
+          v-model:value="search"
+          placeholder="Search title, body, or moderator…"
+          clearable
+          class="max-w-xs"
+        />
+        <NSpace align="center" class="ml-auto">
+          <span class="text-xs text-slate-500 dark:text-slate-400">Signed only</span>
+          <NSwitch v-model:value="signedOnly" size="small" />
+          <span class="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+            Showing {{ filtered.length }} of {{ items.length }}
+          </span>
+        </NSpace>
+      </div>
     </div>
 
     <div class="card-soft p-2">

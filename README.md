@@ -66,6 +66,9 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | Relay health probe + latency chip          | ✅        |
 | Auto-refresh every 60s (toggleable)        | ✅        |
 | Peer-outbox forwarding UI (wired to commit 12) | ✅ |
+| KPI count-up animation + value-change pulse | ✅ |
+| Bulletin kind filter chips + signed-only toggle | ✅ |
+| Mesh-forward audit log (localStorage, last 20) | ✅ |
 | Vitest unit suite (theme, StatCard)        | ✅        |
 
 ## Architecture
