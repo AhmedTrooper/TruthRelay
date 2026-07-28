@@ -544,6 +544,7 @@ Tech stack, third-party libraries, and AI tools used are documented in
 | 3-min demo script   | `docs/demo-script.md`                    |
 | Facebook post       | `docs/social.md`                         |
 | Tech disclosures    | `docs/disclosures.md`                    |
+| Full project report | [`assets/report.pdf`](assets/report.pdf) |
 
 ## License
 
