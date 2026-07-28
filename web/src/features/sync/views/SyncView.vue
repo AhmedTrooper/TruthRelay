@@ -33,6 +33,11 @@ const autoRefresh = ref(false);
 let autoTimer: number | null = null;
 
 const peerOutboxForwarding = ref(false);
+const peerOutboxJson = ref('');
+const forwardingBusy = ref(false);
+const lastForwardResult = ref<string | null>(null);
+const lastForwardError = ref<string | null>(null);
+const lastForwardPayload = ref<any | null>(null);
 
 async function pull() {
   busy.value = true;
@@ -49,6 +54,47 @@ async function pull() {
     message.error(lastError.value ?? 'unknown error');
   } finally {
     busy.value = false;
+  }
+}
+
+async function forwardPeerOutbox() {
+  forwardingBusy.value = true;
+  lastForwardError.value = null;
+  lastForwardResult.value = null;
+  let parsed: any[];
+  try {
+    parsed = JSON.parse(peerOutboxJson.value || '[]');
+    if (!Array.isArray(parsed)) {
+      throw new Error('payload must be a JSON array');
+    }
+  } catch (e: any) {
+    lastForwardError.value = e?.message ?? String(e);
+    message.error(lastForwardError.value ?? 'unknown error');
+    forwardingBusy.value = false;
+    return;
+  }
+  const bulletins_ = parsed.filter((x) => x?.kind === 'bulletin');
+  const requests_ = parsed.filter((x) => x?.kind === 'request');
+  try {
+    const res = await api.post('/api/v1/mesh/forward', {
+      forwarder_peer_id: 'web-admin',
+      bulletins: bulletins_,
+      requests: requests_,
+    });
+    const data = res.data as {
+      accepted: number;
+      duplicates: number;
+      rejected: number;
+    };
+    lastForwardPayload.value = data;
+    lastForwardResult.value = `Forwarded ${bulletins_.length} bulletins, ${requests_.length} requests — accepted=${data.accepted}, duplicates=${data.duplicates}, rejected=${data.rejected}.`;
+    message.success('Forwarded to relay');
+    await Promise.all([bulletins.refresh(), requests.refresh()]);
+  } catch (e: any) {
+    lastForwardError.value = e?.message ?? String(e);
+    message.error(lastForwardError.value ?? 'unknown error');
+  } finally {
+    forwardingBusy.value = false;
   }
 }
 
@@ -155,20 +201,56 @@ const formattedServerTime = computed(() => {
       </NSpace>
     </NCard>
 
-    <NCard title="Peer outbox forwarding (coming soon)">
+    <NCard title="Peer outbox forwarding">
       <NSpace vertical>
         <p class="text-sm text-slate-600 dark:text-slate-300 m-0">
-          When a peer (offline phone) hands us its queued messages, this dashboard will let you
-          forward them to the relay. The endpoint is part of the mesh-sync work in progress.
+          When a peer (offline phone) hands us its queued messages, forward them through this
+          dashboard to the relay. The server re-verifies every signature and deduplicates by
+          <code>sha256</code> and request <code>id</code>, so partial success is expected.
         </p>
+        <NInput
+          v-model:value="peerOutboxJson"
+          type="textarea"
+          placeholder='[{"kind":"bulletin","sha256":"…","title":"…","body":"…"}]'
+          :rows="6"
+        />
         <NSpace align="center">
           <NTag :type="peerOutboxForwarding ? 'success' : 'default'" round>
             {{ peerOutboxForwarding ? 'armed' : 'idle' }}
           </NTag>
-          <NButton size="small" @click="peerOutboxForwarding = !peerOutboxForwarding">
+          <NButton
+            size="small"
+            @click="peerOutboxForwarding = !peerOutboxForwarding"
+          >
             {{ peerOutboxForwarding ? 'Disable' : 'Enable' }} forwarding
           </NButton>
+          <NButton
+            type="primary"
+            size="small"
+            :loading="forwardingBusy"
+            :disabled="!peerOutboxForwarding"
+            @click="forwardPeerOutbox"
+          >
+            Forward to relay
+          </NButton>
         </NSpace>
+        <NAlert
+          v-if="lastForwardResult"
+          type="success"
+          :title="lastForwardResult"
+          :show-icon="true"
+        />
+        <NAlert
+          v-if="lastForwardError"
+          type="error"
+          :title="lastForwardError"
+        />
+        <details v-if="lastForwardPayload" class="text-xs">
+          <summary class="cursor-pointer text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+            Show raw response
+          </summary>
+          <pre class="mt-2 max-h-80 overflow-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 font-mono text-[11px]">{{ JSON.stringify(lastForwardPayload, null, 2) }}</pre>
+        </details>
       </NSpace>
     </NCard>
   </div>

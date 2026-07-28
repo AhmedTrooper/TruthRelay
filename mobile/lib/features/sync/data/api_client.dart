@@ -48,5 +48,26 @@ class ApiClient {
     return r.data as Map<String, dynamic>;
   }
 
+  /// Forwards a peer's queued outbox through the relay. The server still
+  /// re-verifies every bulletin signature and deduplicates by `sha256`
+  /// and request `id`, so this is the same idempotent insertion path as
+  /// `/api/v1/sync` — just labelled "mesh/forward" so audit logs can
+  /// distinguish carrier traffic from same-phone traffic.
+  Future<Map<String, dynamic>> meshForward({
+    required String forwarderPeerId,
+    required List<Map<String, dynamic>> bulletins,
+    required List<Map<String, dynamic>> requests,
+  }) async {
+    final r = await _dio.post('/api/v1/mesh/forward', data: {
+      'forwarder_peer_id': forwarderPeerId,
+      'bulletins': bulletins,
+      'requests': requests,
+    });
+    if (r.statusCode != 200) {
+      throw Exception('meshForward: ${r.statusCode} ${r.data}');
+    }
+    return r.data as Map<String, dynamic>;
+  }
+
   String get baseUrl => _dio.options.baseUrl;
 }

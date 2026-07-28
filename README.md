@@ -49,7 +49,7 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | BLE (discovery — 16-byte TR1 beacons)    | discovery ✅ |
 | BLE (transport — chunked, MTU-aware)     | transport ✅ |
 | Local-only hotspot (auto-fallback)       | transport ✅ |
-| Relay forwarding (peer outbox via uplink) | coming       |
+| Relay forwarding (peer outbox via uplink) | endpoint ✅ |
 | Ed25519 re-verification on every hop     | coming       |
 
 ### Web admin status

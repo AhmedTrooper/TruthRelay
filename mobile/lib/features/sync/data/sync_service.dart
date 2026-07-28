@@ -75,6 +75,45 @@ class SyncService {
       rethrow;
     }
   }
+
+  /// Forwards [peerOutbox] (the queued payloads we received from a peer
+  /// over a mesh transport) through the relay. Returns the relay's
+  /// result map unchanged so the caller can surface `accepted` /
+  /// `duplicates` / `rejected` counts in the UI.
+  ///
+  /// The server re-verifies every bulletin signature and deduplicates by
+  /// `sha256` / `id`, so partial success is possible: e.g. one peer-sent
+  /// bulletin might be rejected because its moderator isn't registered
+  /// while a sibling request is accepted. The caller is responsible for
+  /// tracking which rows succeeded if it cares — this method is
+  /// intentionally fire-and-forget about that because the canonical
+  /// state lives on the server.
+  Future<Map<String, dynamic>> forwardPeerOutbox({
+    required String forwarderPeerId,
+    required Iterable<String> peerOutbox,
+  }) async {
+    final bs = <Map<String, dynamic>>[];
+    final rs = <Map<String, dynamic>>[];
+    for (final raw in peerOutbox) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! Map<String, dynamic>) continue;
+        // The mesh protocol wraps each peer-supplied item in a kind+json
+        // pair. We dispatch on the kind tag here.
+        final kind = decoded['kind'] as String? ?? '';
+        if (kind == 'bulletin') {
+          bs.add(decoded);
+        } else if (kind == 'request') {
+          rs.add(decoded);
+        }
+      } catch (_) {/* skip malformed entries */}
+    }
+    return api.meshForward(
+      forwarderPeerId: forwarderPeerId,
+      bulletins: bs,
+      requests: rs,
+    );
+  }
 }
 
 // ---- Null-typed test doubles --------------------------------------------

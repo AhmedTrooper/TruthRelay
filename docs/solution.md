@@ -74,6 +74,16 @@ a slow receiver. A `HotspotChannel` byte-pipe interface keeps the
 framing/reassembly logic pure Dart so unit tests cover the whole stack
 without touching real sockets.
 
+When a phone has connectivity but its neighbour does not, the connected
+phone becomes a **carrier**: it receives the offline phone's queued
+outbox (bulletins + help requests) over a local mesh transport and
+forwards them to `/api/v1/mesh/forward`. Trust is enforced server-side —
+every bulletin still must carry a valid Ed25519 signature from a
+registered moderator, and each help request is deduplicated by `id`.
+The same idempotent insertion path that `/api/v1/sync` uses is reused,
+so the relay never sees a forwarded bulletin it didn't already
+verify.
+
 The **Axum relay** is a single Rust binary with a SQLite WAL database.
 It exposes three primitives: `POST /api/v1/bulletins`, `POST /api/v1/requests`,
 and `POST /api/v1/sync` for bulk push/pull. Bulletins carry an Ed25519
