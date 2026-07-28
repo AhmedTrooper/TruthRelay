@@ -1,15 +1,37 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../data/storage/hive_boxes.dart';
+import '../../sync/data/retention_policy.dart';
 import '../models/help_request.dart';
 
 class RequestRepository {
   Box<Map> get _box => Hive.box<Map>(HiveBoxes.requests);
+  final RetentionPolicy _policy = RetentionPolicy();
 
   Future<void> upsertMany(List<HelpRequest> rows) async {
     if (rows.isEmpty) return;
-    final entries = {for (final r in rows) r.id: r.toJson()};
-    await _box.putAll(entries);
+    final merged = <String, HelpRequest>{
+      for (final r in rows) r.id: r,
+    };
+    for (final raw in _box.values) {
+      final m = Map<String, dynamic>.from(raw);
+      merged.putIfAbsent(m['id'] as String, () => HelpRequest.fromJson(m));
+    }
+    final all = merged.values.toList()
+      ..sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
+    final kept = _policy.pruneRequests(all);
+    final keptIds = {for (final r in kept) r.id};
+    final toDrop = merged.keys.where((id) => !keptIds.contains(id)).toList();
+    final toPut = <String, Map>{
+      for (final r in kept.where((r) => rows.any((x) => x.id == r.id)))
+        r.id: r.toJson(),
+    };
+    if (toDrop.isNotEmpty) {
+      await _box.deleteAll(toDrop);
+    }
+    if (toPut.isNotEmpty) {
+      await _box.putAll(toPut);
+    }
   }
 
   Future<void> insert(HelpRequest r) async {
