@@ -1,0 +1,107 @@
+# ────────────────────────────────────────────────────────────────────────
+# TruthRelay — root .gitignore
+#
+# Catches things that span multiple subprojects and top-level OS / editor
+# cruft. Each subproject (api/, web/, mobile/) also has its own .gitignore
+# with language-specific patterns.
+# ────────────────────────────────────────────────────────────────────────
+
+# ── OS ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+ehthumbs_vista.db
+*.lnk
+
+# ── Editors / IDEs ─────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+nbproject/
+nbbuild/
+nbdist/
+.nb-gradle/
+*.iml
+
+# ── Secrets (NEVER commit) ────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+**/secrets.*
+**/credentials.*
+
+# ── Build outputs that escape subprojects ──────────────────────────────
+# (each subproject's gitignore also covers its own)
+**/target/
+**/node_modules/
+**/dist/
+**/build/
+**/.dart_tool/
+**/.next/
+**/.nuxt/
+**/.cache/
+
+# ── Local databases & key material (cross-project) ────────────────────
+# SQLite files anywhere in the tree (api/ and any future projects).
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+
+# Generated Ed25519 / RSA keypairs.
+**/keys/
+**/*.key.b64
+**/*.secret.*
+
+# ── Logs / runtime ─────────────────────────────────────────────────────
+*.log
+logs/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ── Coverage / test artifacts ─────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+*.gcov
+htmlcov/
+.pytest_cache/
+.dart_tool/
+
+# ── OS / packaging artifacts ──────────────────────────────────────────
+*.tgz
+*.tar.gz
+*.zip
+*.dmg
+*.deb
+*.rpm
+*.AppImage
+
+# ── Docker / compose runtime ──────────────────────────────────────────
+# Named volumes are managed by Docker, never in the tree.
+
+# ── Misc junk ─────────────────────────────────────────────────────────
+.tmp/
+tmp/
+*.bak
+*.old
+*.orig
+*.rej
+
+
+project_rules/
