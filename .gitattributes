@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Exclude lockfiles from language stats if desired (we keep them for reproducibility).
+# Cargo.lock intentionally tracked for binary crates.

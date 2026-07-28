@@ -1,0 +1,87 @@
+# ────────────────────────────────────────────────────────────────────────
+# TruthRelay mobile/ — Flutter (Android) + Dart
+#
+# This is the canonical Flutter .gitignore extended for our Android-only
+# project. iOS / macOS / Windows patterns are intentionally removed.
+# ────────────────────────────────────────────────────────────────────────
+
+# ── Dart / Flutter tooling ────────────────────────────────────────────
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+test/.test_coverage.dart
+test/.test_packages/
+
+# ── Symbolication / obfuscation ────────────────────────────────────────
+app.*.symbols
+app.*.map.json
+
+# ── Android (Flutter project) ─────────────────────────────────────────
+# Per-build outputs
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Gradle / Android Studio artifacts
+/android/.gradle/
+/android/.idea/
+/android/.kotlin/
+/android/local.properties          # machine-specific SDK path
+/android/**/GeneratedPluginRegistrant.java
+/android/captures/
+/android/.cxx/
+/android/app/build/
+/android/build/
+
+# Native libraries (JNA / jniLibs variants)
+/android/app/src/main/jniLibs/
+/android/app/src/main/libs/
+*.so
+
+# ── Editors / IDEs ────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.atom/
+.build/
+.buildlog/
+.history
+.vscode/
+
+# ── OS junk ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+*.class
+*.log
+*.pyc
+
+# ── Secrets / env ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+**/google-services.json
+**/google-services.plist
+**/*.keystore
+**/*.jks
+
+# ── Flutter local state ───────────────────────────────────────────────
+.fvm/
+.flutter-version
+*.lock
+
+# ── Misc ──────────────────────────────────────────────────────────────
+.svn/
+.swiftpm/
+migrate_working_dir/

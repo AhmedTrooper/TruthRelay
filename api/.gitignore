@@ -1,0 +1,44 @@
+# ────────────────────────────────────────────────────────────────────────
+# TruthRelay api/ — Rust + Axum + SQLite
+# ────────────────────────────────────────────────────────────────────────
+
+# ── Build output ──────────────────────────────────────────────────────
+/target
+/target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# ── Local SQLite databases & WAL files ────────────────────────────────
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+
+# ── Environment overrides (NEVER commit real secrets) ─────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ── Generated key material ────────────────────────────────────────────
+/keys/
+**/*.key.b64
+**/secret_*.json
+
+# ── Test database files (used by `make api-test`) ─────────────────────
+truthrelay-test.db
+truthrelay-test.db-shm
+truthrelay-test.db-wal
+
+# ── Cargo / rust tooling ──────────────────────────────────────────────
+.cargo/
+
+# ── IDE / OS ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store

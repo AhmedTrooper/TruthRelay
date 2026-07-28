@@ -1,0 +1,28 @@
+# Keep docker build context lean — only the component subdirs are needed.
+
+# Top-level junk.
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.log
+
+# Docs / planning (not needed to build images).
+docs/
+
+# Mobile — Flutter codebase isn't containerised in this stack.
+mobile/
+
+# Build outputs that would conflict if mounted in.
+api/target/
+api/truthrelay.db*
+api/keys/
+web/dist/
+web/node_modules/
+web/dev-dist/
+
+# Hackathon briefs.
+project.md

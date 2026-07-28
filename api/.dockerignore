@@ -1,0 +1,27 @@
+# Rust build output + local state.
+target/
+**/*.rs.bk
+**/Cargo.lock.bak
+
+# Local SQLite databases (mounted via volume in compose anyway).
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.sqlite
+**/*.sqlite3
+
+# Editor / OS junk.
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Logs.
+*.log
+
+# Env files (we pass secrets through compose env, not baked images).
+.env
+.env.*

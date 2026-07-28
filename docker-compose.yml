@@ -1,0 +1,78 @@
+# TruthRelay — local development stack.
+#
+# Bring everything up:        docker compose up -d --build
+# Tail logs:                  docker compose logs -f
+# Tear it down (keep volume): docker compose down
+# Nuke it all (incl. data):   docker compose down -v
+#
+# After `up`:
+#   Web admin → http://localhost:5173
+#   API       → http://localhost:8080
+#
+# Note: nginx inside the `web` container reverse-proxies /api/* to the `api`
+# container, so the SPA only ever talks to its own origin (no CORS friction).
+
+services:
+  api:
+    container_name: truthrelay-api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    image: truthrelay-api:latest
+    restart: unless-stopped
+    environment:
+      TRUTHRELAY_BIND: 0.0.0.0:8080
+      TRUTHRELAY_DB: /data/truthrelay.db
+      TRUTHRELAY_KEYS_DIR: /keys
+      # ⚠ Change this in production. Used to authorize moderator registration.
+      TRUTHRELAY_ADMIN_TOKEN: ${TRUTHRELAY_ADMIN_TOKEN:-dev-token-change-me}
+      RUST_LOG: ${RUST_LOG:-info}
+    volumes:
+      - api-data:/data
+      - api-keys:/keys
+    ports:
+      - "${TRUTHRELAY_API_PORT:-8080}:8080"
+    networks:
+      - truthrelay-net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  web:
+    container_name: truthrelay-web
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    image: truthrelay-web:latest
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      # Baked into the static bundle at build time. Use a relative path so the
+      # browser hits same-origin `/api/*` (handled by nginx → `api:8080`).
+      VITE_API_URL: /api
+    ports:
+      - "${TRUTHRELAY_WEB_PORT:-5173}:80"
+    networks:
+      - truthrelay-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  api-data:
+    driver: local
+  api-keys:
+    driver: local
+
+networks:
+  truthrelay-net:
+    driver: bridge
+    name: truthrelay-net
