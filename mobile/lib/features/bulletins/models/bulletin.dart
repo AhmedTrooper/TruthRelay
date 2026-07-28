@@ -11,6 +11,17 @@ class Bulletin {
   final String createdAt;
   final String receivedAt;
 
+  /// Result of the last local Ed25519 signature check against the
+  /// moderator's registered pubkey. `null` means the verification
+  /// has not been performed yet (e.g. server-supplied bulletin where
+  /// the server already verified); `true` means the local check
+  /// passed; `false` means the local check failed — the bulletin
+  /// is **not** VERIFIED and the UI should show "Quarantined".
+  ///
+  /// This field is computed locally — never trusted from a peer's
+  /// word, never copied from another Bulletin instance.
+  final bool? signatureVerified;
+
   const Bulletin({
     required this.id,
     required this.kind,
@@ -23,9 +34,51 @@ class Bulletin {
     this.moderatorId,
     this.moderatorName,
     this.signatureB64,
+    this.signatureVerified,
   });
 
   bool get isVerified => moderatorName != null && moderatorName!.isNotEmpty;
+
+  /// `true` only when we have *both* a moderator name (server has
+  /// registered this key) and a locally-verified Ed25519 signature.
+  /// Anything else — missing pubkey, tampered payload, unknown mod —
+  /// is treated as not VERIFIED so the UI cannot show the green badge
+  /// for a tampered bulletin.
+  bool get isVerifiedLocally =>
+      signatureVerified == true &&
+      moderatorName != null &&
+      moderatorName!.isNotEmpty;
+
+  Bulletin copyWith({
+    String? id,
+    String? kind,
+    String? title,
+    String? body,
+    String? sha256,
+    String? status,
+    String? moderatorId,
+    String? moderatorName,
+    String? signatureB64,
+    String? createdAt,
+    String? receivedAt,
+    bool? signatureVerified,
+    bool resetSignatureVerified = false,
+  }) =>
+      Bulletin(
+        id: id ?? this.id,
+        kind: kind ?? this.kind,
+        title: title ?? this.title,
+        body: body ?? this.body,
+        sha256: sha256 ?? this.sha256,
+        status: status ?? this.status,
+        moderatorId: moderatorId ?? this.moderatorId,
+        moderatorName: moderatorName ?? this.moderatorName,
+        signatureB64: signatureB64 ?? this.signatureB64,
+        createdAt: createdAt ?? this.createdAt,
+        receivedAt: receivedAt ?? this.receivedAt,
+        signatureVerified:
+            resetSignatureVerified ? null : signatureVerified ?? this.signatureVerified,
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -39,6 +92,12 @@ class Bulletin {
         'signature_b64': signatureB64,
         'created_at': createdAt,
         'received_at': receivedAt,
+        // Stored locally so the UI can show the badge across app
+        // restarts without re-running the verification dance — but
+        // always overwritten by the next `upsertMany` call, so a
+        // tampered bulletin can never launder a `true` result through
+        // the box.
+        'signature_verified': signatureVerified,
       };
 
   factory Bulletin.fromJson(Map<String, dynamic> m) => Bulletin(
@@ -53,5 +112,10 @@ class Bulletin {
         signatureB64: m['signature_b64'] as String?,
         createdAt: m['created_at'] as String,
         receivedAt: m['received_at'] as String,
+        // Always re-derive from the on-disk value if present so the
+        // boolean survives a round-trip — but it is *never* trusted
+        // when the bulletin comes from a peer: the next `upsertMany`
+        // call will overwrite it with a fresh verification result.
+        signatureVerified: m['signature_verified'] as bool?,
       );
 }

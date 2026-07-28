@@ -1,6 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../../core/crypto.dart';
 import '../../../data/storage/hive_boxes.dart';
+import '../../sync/data/moderator_public_key_repository.dart';
 import '../../sync/data/retention_policy.dart';
 import '../models/bulletin.dart';
 
@@ -8,11 +10,58 @@ class BulletinRepository {
   Box<Map> get _box => Hive.box<Map>(HiveBoxes.bulletins);
   final RetentionPolicy _policy = RetentionPolicy();
 
+  /// Optional moderator-pubkey cache used to re-verify peer-supplied
+  /// bulletins on every hop. When `null`, signature verification is a
+  /// no-op (the bulletins are still stored, just with
+  /// `signatureVerified: null`).
+  ModeratorPublicKeyRepository? moderatorKeys;
+
+  BulletinRepository({this.moderatorKeys});
+
+  /// Re-runs the Ed25519 check on every supplied bulletin. Returns a
+  /// new list of bulletins annotated with [Bulletin.signatureVerified].
+  /// If the moderator pubkey is not cached and no repository is wired
+  /// in, the result is the input list unchanged with verification
+  /// left as `null`.
+  Future<List<Bulletin>> _verifyMany(List<Bulletin> rows) async {
+    if (moderatorKeys == null) return rows;
+    final out = <Bulletin>[];
+    for (final b in rows) {
+      if (b.signatureB64 == null ||
+          b.moderatorId == null ||
+          b.signatureB64!.isEmpty ||
+          b.moderatorId!.isEmpty) {
+        // Nothing to verify — keep the row, mark as unverified.
+        out.add(b.copyWith(resetSignatureVerified: true));
+        continue;
+      }
+      final pubkey = await moderatorKeys!.get(b.moderatorId!);
+      if (pubkey == null) {
+        out.add(b.copyWith(signatureVerified: false));
+        continue;
+      }
+      final payload = {
+        'kind': b.kind,
+        'title': b.title,
+        'body': b.body,
+        'created_at': b.createdAt,
+      };
+      final ok = await verifyBulletin(
+        payload: payload,
+        signature: decodeBase64(b.signatureB64!),
+        publicKey: pubkey,
+      );
+      out.add(b.copyWith(signatureVerified: ok));
+    }
+    return out;
+  }
+
   Future<void> upsertMany(List<Bulletin> rows) async {
     if (rows.isEmpty) return;
+    final verified = await _verifyMany(rows);
     // Merge incoming rows with existing rows, then prune by retention policy.
     final merged = <String, Bulletin>{
-      for (final r in rows) r.id: r,
+      for (final r in verified) r.id: r,
     };
     for (final raw in _box.values) {
       final m = Map<String, dynamic>.from(raw);
@@ -24,7 +73,7 @@ class BulletinRepository {
     final keptIds = {for (final b in kept) b.id};
     final toDrop = merged.keys.where((id) => !keptIds.contains(id)).toList();
     final toPut = <String, Map>{
-      for (final b in kept.where((b) => rows.any((r) => r.id == b.id)))
+      for (final b in kept.where((b) => verified.any((r) => r.id == b.id)))
         b.id: b.toJson(),
     };
     if (toDrop.isNotEmpty) {

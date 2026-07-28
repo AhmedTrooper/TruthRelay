@@ -50,7 +50,7 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | BLE (transport — chunked, MTU-aware)     | transport ✅ |
 | Local-only hotspot (auto-fallback)       | transport ✅ |
 | Relay forwarding (peer outbox via uplink) | endpoint ✅ |
-| Ed25519 re-verification on every hop     | coming       |
+| Ed25519 re-verification on every peer hop     | ✅        |
 
 ### Web admin status
 

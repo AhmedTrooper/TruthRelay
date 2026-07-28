@@ -114,7 +114,7 @@ class _BulletinsTab extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    StatusBadge(kind: b.kind, verified: b.isVerified),
+                    StatusBadge(kind: b.kind, verified: b.isVerifiedLocally),
                     const SizedBox(height: 4),
                     Text(b.moderatorName ?? '—', style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],

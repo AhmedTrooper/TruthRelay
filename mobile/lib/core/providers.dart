@@ -11,10 +11,20 @@ import '../features/requests/data/request_repository.dart';
 import '../features/settings/data/moderator_settings_repository.dart';
 import '../features/sync/data/api_client.dart';
 import '../features/sync/data/connectivity_sync.dart';
+import '../features/sync/data/moderator_public_key_repository.dart';
 import '../features/sync/data/outbox_repository.dart';
 import '../features/sync/data/sync_service.dart';
 
-final bulletinRepoProvider = Provider<BulletinRepository>((_) => BulletinRepository());
+/// Caches moderator public keys fetched from `/api/v1/moderators/{id}`.
+/// Used by [BulletinRepository] to re-verify peer-supplied bulletins on
+/// every hop so the UI never trusts a peer's word that a bulletin is
+/// signed by a registered moderator.
+final moderatorPublicKeyRepoProvider =
+    Provider<ModeratorPublicKeyRepository>((_) => ModeratorPublicKeyRepository());
+
+final bulletinRepoProvider = Provider<BulletinRepository>((ref) {
+  return BulletinRepository(moderatorKeys: ref.watch(moderatorPublicKeyRepoProvider));
+});
 final requestRepoProvider = Provider<RequestRepository>((_) => RequestRepository());
 final outboxRepoProvider = Provider<OutboxRepository>((_) => OutboxRepository());
 final moderatorSettingsRepoProvider = Provider<ModeratorSettingsRepository>((_) => ModeratorSettingsRepository());

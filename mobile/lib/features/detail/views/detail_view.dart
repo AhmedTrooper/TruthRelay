@@ -24,7 +24,7 @@ class DetailView extends ConsumerWidget {
           return _Scaffold(
             title: b.title,
             body: b.body,
-            badge: StatusBadge(kind: b.kind, verified: b.isVerified),
+            badge: StatusBadge(kind: b.kind, verified: b.isVerifiedLocally),
             extra: 'Status: ${b.status}\nReceived: ${b.receivedAt}',
           );
         },

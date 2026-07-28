@@ -70,4 +70,20 @@ class ApiClient {
   }
 
   String get baseUrl => _dio.options.baseUrl;
+
+  /// Fetches a moderator's registered public key (base64). Used to
+  /// verify peer-received bulletin signatures locally so the phone
+  /// never trusts a peer's word that a bulletin is signed.
+  ///
+  /// Returns `null` if the moderator is unknown or the request fails.
+  Future<String?> fetchModeratorPublicKeyB64(String moderatorId) async {
+    try {
+      final r = await _dio.get('/api/v1/moderators/$moderatorId');
+      if (r.statusCode != 200) return null;
+      final m = r.data as Map<String, dynamic>;
+      return m['public_key_b64'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
 }

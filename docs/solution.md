@@ -84,6 +84,18 @@ The same idempotent insertion path that `/api/v1/sync` uses is reused,
 so the relay never sees a forwarded bulletin it didn't already
 verify.
 
+**Peer-hop verification.** A bulletin that travels only over the local
+mesh never reaches the relay, so the server cannot vouch for it. Before
+any peer-received bulletin is written to the local Hive store, the
+mobile client recomputes the canonical JSON bytes and runs an Ed25519
+verify against the moderator's public key (cached after the first
+fetch, refreshed on `invalidate()`). The result is stored as a
+`signatureVerified` flag: `true` ⇒ show VERIFIED SAFE, `false` ⇒
+quarantine, `null` ⇒ server-supplied bulletin where the relay has
+already vouched. The flag is recomputed on every `upsertMany`, so a
+tampered payload arriving from a hostile peer can never launder a
+prior `true` through the on-disk value.
+
 The **Axum relay** is a single Rust binary with a SQLite WAL database.
 It exposes three primitives: `POST /api/v1/bulletins`, `POST /api/v1/requests`,
 and `POST /api/v1/sync` for bulk push/pull. Bulletins carry an Ed25519
