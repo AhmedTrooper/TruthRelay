@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 import '../../bulletins/data/bulletin_repository.dart';
 import '../../bulletins/models/bulletin.dart';
 import '../../requests/data/request_repository.dart';
@@ -20,6 +22,20 @@ class SyncService {
     required this.requests,
     required this.outbox,
   });
+
+  /// Test-only factory: constructs a SyncService with stubbed dependencies
+  /// that throw on any real call. Tests should subclass [SyncService] and
+  /// override only the methods they need.
+  ///
+  /// The stub instances do NOT touch Hive at construction time. They are
+  /// constructed via a factory function so tests can pass in their own
+  /// already-opened repos when needed.
+  @visibleForTesting
+  SyncService.forTest()
+      : api = _NullApi(),
+        bulletins = _NoIoBulletins(),
+        requests = _NoIoRequests(),
+        outbox = _NoIoOutbox();
 
   Future<int> pull() async {
     final data = await api.pullSync();
@@ -59,4 +75,38 @@ class SyncService {
       rethrow;
     }
   }
+}
+
+// ---- Null-typed test doubles --------------------------------------------
+//
+// These satisfy the SyncService constructor's required types without doing
+// anything. They are only reachable via `SyncService.forTest()` and exist so
+// tests can pass `SyncService.forTest()` and override individual methods.
+
+class _NullApi extends ApiClient {
+  _NullApi() : super();
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('SyncService.forTest() ApiClient stub called: ${invocation.memberName}');
+}
+
+class _NoIoBulletins extends BulletinRepository {
+  _NoIoBulletins() : super();
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('SyncService.forTest() BulletinRepository stub called: ${invocation.memberName}');
+}
+
+class _NoIoRequests extends RequestRepository {
+  _NoIoRequests() : super();
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('SyncService.forTest() RequestRepository stub called: ${invocation.memberName}');
+}
+
+class _NoIoOutbox extends OutboxRepository {
+  _NoIoOutbox() : super();
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('SyncService.forTest() OutboxRepository stub called: ${invocation.memberName}');
 }
