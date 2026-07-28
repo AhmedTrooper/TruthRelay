@@ -1,0 +1,28 @@
+# Vite build output (rebuilt in container).
+dist/
+dev-dist/
+
+# Dependencies (re-installed in container).
+node_modules/
+
+# Editor / OS junk.
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Logs.
+*.log
+npm-debug.log*
+bun-debug.log*
+
+# Env files (passed at build time via --build-arg / compose).
+.env
+.env.*
+.env.local
+
+# Tests (not part of the image).
+scripts/
