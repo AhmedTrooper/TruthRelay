@@ -30,10 +30,24 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
   accounts.
 - Offline-first on the phone; signed-at-source so a rumor can't be silently
   re-authored in transit.
-- HTTP, not BLE — works over any IP link (Wi-Fi, satellite, fiber) without a
-  proprietary mesh.
+- **HTTP + opportunistic local mesh** — talks to the relay over any IP link
+  (Wi-Fi, satellite, fiber) and, when no internet is available, syncs over
+  Wi-Fi Direct between nearby phones so a bulletin from one corner of the
+  affected area can reach another corner that's been offline for hours.
 - All three components produce **byte-identical canonical JSON** before
   signing, so signatures cross language boundaries cleanly.
+
+### Offline mesh status
+
+| Transport                                | Status       |
+|------------------------------------------|--------------|
+| Wi-Fi Direct (BLE discovery + group)     | discovery ✅ |
+| Wi-Fi Direct (transport — handshake/sync)| transport ✅ |
+| Mesh session state machine (hello/request/data/ack) | ✅ |
+| BLE (small-payload fallback)             | coming       |
+| Local-only hotspot (auto-fallback)       | coming       |
+| Relay forwarding (peer outbox via uplink) | coming       |
+| Ed25519 re-verification on every hop     | coming       |
 
 ## Architecture
 
@@ -50,7 +64,11 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
                   ▼
    ┌──────────────────────────┐
    │  Flutter Android App     │   offline-first, outbox queue, Hive cache
-   └──────────────────────────┘
+   └────┬─────────────────────┘
+        │  Wi-Fi Direct / BLE / Local-Only Hotspot
+        │  (when no internet — gossip over BLE-advertised peers)
+        ▼
+   Neighbouring Flutter Android Apps — same mesh, same dedup
 ```
 
 ## Repo layout

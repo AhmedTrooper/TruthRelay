@@ -21,6 +21,7 @@ void main() {
         bloom: Uint8List(512),
         itemCount: 42,
         newestReceivedAt: DateTime.utc(2026, 7, 28, 10, 0, 0),
+        ids: const ['a', 'b', 'c'],
       );
       final raw = hello.encode();
       final decoded = decodeMeshPacket(raw);
@@ -30,6 +31,20 @@ void main() {
       expect(h.itemCount, 42);
       expect(h.newestReceivedAt.toUtc(), hello.newestReceivedAt.toUtc());
       expect(h.bloom.length, 512);
+      expect(h.ids, ['a', 'b', 'c']);
+    });
+
+    test('rejects > 1024 ids', () {
+      expect(
+        () => MeshHello(
+          header: _hdr(),
+          bloom: Uint8List(512),
+          itemCount: 1,
+          newestReceivedAt: DateTime.utc(2026, 7, 28, 10, 0, 0),
+          ids: List.generate(1025, (i) => 'id-$i'),
+        ),
+        throwsArgumentError,
+      );
     });
   });
 

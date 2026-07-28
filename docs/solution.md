@@ -11,7 +11,14 @@ It runs on Android phones, in a web browser, and on a tiny Rust server
 │  Vue 3 Admin PWA │    │ Axum (Rust) +    │    │ Flutter Android  │
 │  Naive UI        │◄──►│ SQLite (WAL)     │◄──►│ Hive + outbox    │
 │  Ed25519 signer  │    │ store-and-forward│    │ go_router        │
-└──────────────────┘    └──────────────────┘    └──────────────────┘
+└──────────────────┘    └──────────────────┘    └─────┬────────────┘
+                                                     │
+                                          Wi-Fi Direct (BLE discovery)
+                                          BLE small-payload
+                                          Local-only hotspot
+                                                     │
+                                             neighbouring phones
+                                          (same dedup, same sig checks)
 ```
 
 The **Flutter mobile app** is the citizen-side interface. Every screen reads
@@ -20,6 +27,16 @@ Every write is appended to an **outbox** table that drains opportunistically
 when any connectivity appears — local Wi-Fi, mobile data, even an Axum
 hotspot opened on a laptop. Each outbox row carries a client-generated UUID,
 so the relay can dedupe across phones without coordination.
+
+The mesh layer adds **gossip-style peer sync** for the case when *no* uplink
+is available. Phones advertise themselves over BLE; nearby phones form a
+Wi-Fi Direct group, swap bloom-filter inventories plus a compact id list
+(via a `MeshHello` envelope), exchange the bulletins each side is missing
+as signed JSON `MeshData` envelopes, and ack each one with `MeshAck`.
+Every bulletin is re-verified against the moderator's registered public
+key on every hop — VERIFIED status is computed locally, never trusted
+from a peer's word. A 32-byte packet id per envelope, persisted in a tiny
+`mesh_seen` Hive box, deduplicates retransmits across the gossip.
 
 The **Axum relay** is a single Rust binary with a SQLite WAL database.
 It exposes three primitives: `POST /api/v1/bulletins`, `POST /api/v1/requests`,

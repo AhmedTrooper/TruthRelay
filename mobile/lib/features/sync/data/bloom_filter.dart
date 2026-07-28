@@ -62,6 +62,45 @@ class BloomFilter {
     return true;
   }
 
+  /// String convenience: hashes the id into a 32-byte buffer using FNV-1a
+  /// so callers can ask "might I have this id?" without an explicit sha256.
+  /// Must be paired with [addString] (or any 32-byte digest of the same id
+  /// bytes) for membership to be consistent.
+  bool mightContainString(String id) => mightContain(_key32(id));
+
+  /// String convenience: adds the 32-byte FNV-1a digest of [id]. Use this
+  /// when you'll later query with [mightContainString].
+  void addString(String id) => add(_key32(id));
+
+  /// FNV-1a 64-bit hash, expanded to 32 bytes (low + high halves each
+  /// padded to 16 bytes). Discriminating for short ids, deterministic, and
+  /// cheap. NOT cryptographic — only used as the bloom input.
+  static Uint8List _key32(String id) {
+    var hash = 0xcbf29ce484222325; // FNV-1a 64-bit offset basis
+    const prime = 0x100000001b3;
+    for (final r in id.runes) {
+      hash = ((hash ^ (r & 0xff)) * prime) & 0xffffffffffffffff;
+    }
+    final out = Uint8List(32);
+    final bytes = ByteData(8);
+    bytes.setUint64(0, hash);
+    final lo = bytes.getUint64(0);
+    // Split the 8-byte digest into two halves, each spread across 16 bytes,
+    // so the bloom's two independent 8-byte reads (`_readBigEndian` at
+    // offset 0 and 8) see non-zero, distinct inputs.
+    for (var i = 0; i < 8; i++) {
+      out[i] = (lo >> ((7 - i) * 8)) & 0xff;
+      out[16 + i] = (hash >> ((7 - i) * 8)) & 0xff;
+    }
+    // Fill the remaining 8 bytes (offsets 8-15) with a stretched XOR of
+    // the input length and a constant so even short inputs produce
+    // distinct buffers.
+    for (var i = 8; i < 16; i++) {
+      out[i] = ((hash >> ((i % 8) * 8)) ^ (id.length * (i + 1))) & 0xff;
+    }
+    return out;
+  }
+
   /// Wipe all bits. Used after a retention-policy sweep so the filter only
   /// reflects what is currently in the local cache.
   void reset() {

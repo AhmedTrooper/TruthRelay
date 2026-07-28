@@ -12,6 +12,7 @@ class HiveBoxes {
   static const outbox = 'outbox';
   static const settings = 'settings';
   static const lastSync = 'last_sync';
+  static const meshSeen = 'mesh_seen';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -21,6 +22,7 @@ class HiveBoxes {
       Hive.openBox(outbox),
       Hive.openBox(settings),
       Hive.openBox(lastSync),
+      Hive.openBox(meshSeen),
     ]);
   }
 }

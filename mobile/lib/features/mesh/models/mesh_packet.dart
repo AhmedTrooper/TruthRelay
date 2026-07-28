@@ -89,13 +89,19 @@ class MeshHello extends MeshPacket {
   final Uint8List bloom; // serialized BloomFilter (512 bytes for the current filter)
   final int itemCount;
   final DateTime newestReceivedAt;
+  final List<String> ids; // ids the sender is advertising (max 1024 per hello)
 
   MeshHello({
     required this.header,
     required this.bloom,
     required this.itemCount,
     required this.newestReceivedAt,
-  });
+    required this.ids,
+  }) {
+    if (ids.length > 1024) {
+      throw ArgumentError.value(ids.length, 'ids', 'hello may not advertise more than 1024 ids');
+    }
+  }
 
   @override
   Map<String, dynamic> bodyToJson() => {
@@ -103,6 +109,7 @@ class MeshHello extends MeshPacket {
         'bloom': base64Encode(bloom),
         'count': itemCount,
         'newest': newestReceivedAt.toUtc().toIso8601String(),
+        'ids': ids,
       };
 }
 
@@ -233,12 +240,17 @@ MeshPacket _decodeInventoryLike(
   final count = body['count'] as int;
   final newest = DateTime.parse(body['newest'] as String);
   final bytes = Uint8List.fromList(bloom);
+  final idsRaw = body['ids'];
+  final ids = idsRaw is List
+      ? idsRaw.map((e) => e as String).toList(growable: false)
+      : const <String>[];
   if (isHello) {
     return MeshHello(
       header: header,
       bloom: bytes,
       itemCount: count,
       newestReceivedAt: newest,
+      ids: ids,
     );
   }
   return MeshInventory(
