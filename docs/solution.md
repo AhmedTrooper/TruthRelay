@@ -49,8 +49,17 @@ BLE-only channel (`ble_discovery.dart`) broadcasts a 16-byte `MeshPeerAdvertisem
 containing a `TR1` magic, a version, our 9-byte peer id, and the local
 item-count modulo 65536. Battery-conscious scan windows are 5 s on / 30 s
 off by default. The BLE discovery layer is transport-pure: it does not
-move packet payloads — that arrives in the next phase via a GATT-based
-`ble_transport.dart` with MTU-aware chunking.
+move packet payloads — that arrives in `ble_transport.dart`.
+
+Once two phones have discovered each other they can synchronise over a
+GATT carry (`BleMeshTransport`). Each `MeshPacket` JSON envelope is broken
+into 4-byte-header frames (`[len:2][seq:2][payload:N]`, ≤180 bytes per
+frame by default so the channel survives both BLE 4.x and BLE 5 MTU
+quirks), reassembled on the receiver with a per-message timeout, deduped
+at the chunk level, and a `BleByteChannel` interface so production can
+bind to `flutter_blue_plus` GATT without dragging the plugin into unit
+tests. The same `MeshTransport` interface that the Wi-Fi Direct transport
+implements is reused unchanged.
 
 The **Axum relay** is a single Rust binary with a SQLite WAL database.
 It exposes three primitives: `POST /api/v1/bulletins`, `POST /api/v1/requests`,

@@ -46,7 +46,7 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 | Mesh session state machine (hello/request/data/ack) | ✅ |
 | Peer-driven coordinator (concurrency + backoff) | ✅ |
 | BLE (discovery — 16-byte TR1 beacons)    | discovery ✅ |
-| BLE (small-payload transport)            | coming       |
+| BLE (transport — chunked, MTU-aware)     | transport ✅ |
 | Local-only hotspot (auto-fallback)       | coming       |
 | Relay forwarding (peer outbox via uplink) | coming       |
 | Ed25519 re-verification on every hop     | coming       |
