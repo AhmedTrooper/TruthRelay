@@ -42,6 +42,16 @@ loop of re-syncs. Every bulletin is re-verified against the moderator's
 registered public key on every hop — VERIFIED status is computed locally,
 never trusted from a peer's word.
 
+Two parallel discovery radios keep phones visible even when no group has
+formed yet. Wi-Fi Direct uses `flutter_p2p_connection` to advertise host
+credentials over BLE and surface them as scanned peers. A second
+BLE-only channel (`ble_discovery.dart`) broadcasts a 16-byte `MeshPeerAdvertisement`
+containing a `TR1` magic, a version, our 9-byte peer id, and the local
+item-count modulo 65536. Battery-conscious scan windows are 5 s on / 30 s
+off by default. The BLE discovery layer is transport-pure: it does not
+move packet payloads — that arrives in the next phase via a GATT-based
+`ble_transport.dart` with MTU-aware chunking.
+
 The **Axum relay** is a single Rust binary with a SQLite WAL database.
 It exposes three primitives: `POST /api/v1/bulletins`, `POST /api/v1/requests`,
 and `POST /api/v1/sync` for bulk push/pull. Bulletins carry an Ed25519

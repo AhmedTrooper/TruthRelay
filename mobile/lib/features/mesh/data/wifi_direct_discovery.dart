@@ -61,7 +61,19 @@ class MeshPeer {
 }
 
 /// Status of the discovery lifecycle.
-enum DiscoveryStatus { idle, scanning, error, denied }
+///
+/// BLE-only peers add `advertising` / `advertisingAndScanning` (a phone can
+/// either accept advertisements, broadcast its own, or both). They still
+/// coexist with the Wi-Fi Direct scanner's `idle` / `scanning` / `error` /
+/// `denied` states — the BLE layer just emits the larger variant.
+enum DiscoveryStatus {
+  idle,
+  scanning,
+  advertising,
+  advertisingAndScanning,
+  error,
+  denied,
+}
 
 class WifiDirectDiscovery {
   final MeshDiscoveryBackend _backend;

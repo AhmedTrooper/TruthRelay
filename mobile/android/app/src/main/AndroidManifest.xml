@@ -7,6 +7,20 @@
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
                      android:usesPermissionFlags="neverForLocation" />
 
+    <!-- Bluetooth Low Energy (mesh discovery). These are declared here at the
+         top of the manifest so they apply to every API level we target; older
+         devices (≤ API 30) implicitly grant the companion `BLUETOOTH` runtime
+         permission, while Android 12+ (API 31+) requires the user-facing
+         `BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT` prompts at runtime. -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+                     android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+                     android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+                     android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
     <application
         android:label="mobile"
         android:name="${applicationName}"

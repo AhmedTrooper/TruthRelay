@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/bulletins/data/bulletin_repository.dart';
+import '../features/mesh/data/ble_discovery.dart' as ble;
 import '../features/mesh/data/mesh_coordinator.dart' as coord;
 import '../features/mesh/data/wifi_direct_discovery.dart';
 import '../features/requests/data/request_repository.dart';
@@ -45,6 +46,15 @@ final pendingOutboxCountProvider = FutureProvider.autoDispose<int>((ref) async {
 /// Mesh peer discovery. Started once at app boot.
 final wifiDirectDiscoveryProvider = Provider<WifiDirectDiscovery>((ref) {
   final d = WifiDirectDiscovery();
+  ref.onDispose(d.dispose);
+  return d;
+});
+
+/// BLE peer discovery. Runs over a separate radio so phones remain visible
+/// even when the Wi-Fi Direct group hasn't formed yet. Default-wired to the
+/// real `flutter_blue_plus` backend; tests inject a [ble.BleDiscoveryBackend].
+final bleDiscoveryProvider = Provider<ble.BleDiscovery>((ref) {
+  final d = ble.BleDiscovery();
   ref.onDispose(d.dispose);
   return d;
 });
