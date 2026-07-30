@@ -54,7 +54,7 @@ services:
     environment:
       # Baked into the static bundle at build time. Use a relative path so the
       # browser hits same-origin `/api/*` (handled by nginx → `api:8080`).
-      VITE_API_URL: /api
+      VITE_API_URL: ""
     ports:
       - "${TRUTHRELAY_WEB_PORT:-5173}:80"
     networks:
