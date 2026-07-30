@@ -39,6 +39,35 @@ make up
 - **`make up-bg`**: Runs `docker compose up -d --build` in background (detached) mode.
 - **`make down`**: Stops running containers (`docker compose down`).
 
+### 🌐 Finding Your Laptop's Local IP & Port
+
+To connect physical Android devices or external devices to your laptop's API relay server, you need your laptop's local IP address and server port:
+
+- **Server Port**: `8080` by default (API runs on port `8080`, Web on `5173`).
+
+#### How to find your local IPv4 address by OS:
+
+- **🐧 Linux (*Recommended Platform*)**:
+  > *Linux is recommended because Docker runs natively without VM/virtualization overhead, providing maximum performance and seamless local network interface binding.*
+  ```bash
+  hostname -I | awk '{print $1}'
+  # Or using iproute2:
+  ip a | grep 'inet '
+  ```
+- **🍎 macOS**:
+  ```bash
+  ipconfig getifaddr en0   # Wi-Fi interface
+  # Or for Ethernet:
+  ipconfig getifaddr en1
+  ```
+- **🪟 Windows** (Command Prompt / PowerShell):
+  ```cmd
+  ipconfig
+  # Look for "IPv4 Address" under your active Wi-Fi or Ethernet adapter (e.g., 192.168.1.5)
+  ```
+
+Once you have your IP (e.g., `192.168.1.5`), use `http://192.168.1.5:8080` as your `TRUTHRELAY_API_URL`.
+
 ### 📱 Building & Running the Android Mobile App
 
 The Android app requires Flutter SDK and connects to the relay API via `TRUTHRELAY_API_URL`.
@@ -215,8 +244,10 @@ Here is exactly how everything runs completely offline:
 
 1. **Docker just needs to compile (No external DBs):** Because we use SQLite, we don't need Postgres or Redis. Docker simply downloads its basic language environment (Rust, Bun, Debian) to compile the code locally on your laptop. Once compiled, it runs 100% off-grid.
 2. **Expose the local server on your laptop:** Start a local Wi-Fi hotspot on your laptop. The API **must** be exposed so phones can reach it. By setting `TRUTHRELAY_BIND=0.0.0.0:8080`, you expose the server to anyone on your local network.
-3. **Find your laptop's IP and Port:** The IP of your laptop (e.g., `192.168.1.5`) and the exposed port (e.g., `8080`) will be different on different machines.
-   - Run `ipconfig` (Windows) or `ip a` (Linux/Mac) to find your IPv4 address.
+3. **Find your laptop's IP and Port:** The API defaults to port `8080`. Find your IPv4 address:
+   - **Linux (*Recommended*)**: `hostname -I | awk '{print $1}'` or `ip a | grep 'inet '`
+   - **macOS**: `ipconfig getifaddr en0` (or `en1`)
+   - **Windows**: `ipconfig` (look for `IPv4 Address`)
 4. **Inject the environment variables into Flutter:** You must explicitly tell the Flutter app where your laptop's local server is located, otherwise it defaults to localhost. You inject this during the build or run step using `--dart-define`:
    ```bash
    cd mobile
