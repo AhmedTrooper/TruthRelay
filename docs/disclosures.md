@@ -12,6 +12,9 @@
 - **Other:** serde, serde_json, base64, sha2, uuid, chrono, anyhow, thiserror,
   tower, tower-http.
 
+The backend is the **only** entry point for the admin and the mobile app —
+no public-internet traffic anywhere in the system.
+
 ### Admin dashboard (`web/`)
 - **Framework:** Vue 3 (Composition API + `<script setup>`).
 - **Router:** vue-router 5.
@@ -19,7 +22,10 @@
 - **UI library:** Naive UI 2 + vfonts.
 - **Bundler:** Vite 8 (Rolldown).
 - **Styling:** Tailwind CSS 3 (utilities only, no plugin stack).
-- **PWA:** vite-plugin-pwa + workbox-window.
+- **PWA:** vite-plugin-pwa + workbox-window (SPA is shipped as a PWA bundle
+  for offline-capable first-load; in production `nginx` serves the static
+  `dist/` and reverse-proxies `/api/*` to the Axum container on the same
+  laptop).
 - **HTTP:** Axios.
 - **Cryptography:** @noble/ed25519 + @noble/hashes.
 - **Package manager:** Bun.
@@ -56,14 +62,15 @@ dependencies are listed in `api/Cargo.lock`, and the Dart deps are in
 ## Build & run
 
 ```bash
-# Backend
+# Backend (binds 0.0.0.0:8080 by default)
 cd api && cargo run -- serve
 
-# Admin
+# Admin (SPA is served by nginx in production; this is the dev server)
 cd web && bun install && VITE_API_URL=http://localhost:8080 bun run dev
 
-# Mobile
-cd mobile && flutter pub get && flutter run
+# Mobile (bake the laptop's hotspot IP at compile time)
+cd mobile && flutter pub get && \
+  flutter run --dart-define=TRUTHRELAY_API_URL=http://<laptop-ip>:8080
 ```
 
 ## License

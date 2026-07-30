@@ -27,7 +27,7 @@ Register a moderator via the web admin (`/admin/moderators`) and publish
 
 ---
 
-## 1. Online baseline
+## 1. Hotspot baseline
 
 | Phone | Expected                                                                 |
 |-------|--------------------------------------------------------------------------|
@@ -52,7 +52,7 @@ Rejected failure mode: status shows `Pushed 1 items`.
 
 ## 3. **Two-phone** Wi-Fi Direct handoff
 
-1. Phone A: Post another help request ("Generator online"). Outbox = 2.
+1. Phone A: Post another help request ("Generator running"). Outbox = 2.
 2. Phone B: same app, but the relay is unreachable for B (turn off WAN too).
 3. Both phones should be on the same Wi-Fi (a router, not the modem — the
    mesh layer will try BLE first if Wi-Fi Direct fails).
@@ -87,23 +87,25 @@ sync screen reads "Local hotspot" instead of "Peer link".
 
 ## 5. **Two-phone** Relay forwarding
 
-The carriers phase. Phone B has the bulletin but no internet; Phone A has
-internet but no useful outbox.
+The carriers phase. Phone B has the bulletin but cannot reach the laptop;
+Phone A is in the laptop's hotspot but has no useful outbox of its own.
 
-1. Phone A: connect to Wi-Fi (online). Phone B: stays offline.
-2. Phone B composes 3 help requests while offline.
+1. Phone A: connected to the laptop's hotspot. Phone B: out of hotspot range.
+2. Phone B composes 3 help requests while out of range.
 3. Walk Phone A into BLE range of Phone B.
 4. Phone A's Sync screen should show Phone B within 10 s.
 5. Tap **Sync now** on Phone A. The session flips to `ok` and the
    request counter reads `↑0 ↓3`.
-6. Phone A reconnects to the relay (it already is, but if Wi-Fi just
-   came back, `ConnectivitySyncCoordinator` fires within 3 s of
-   connectivity change).
+6. Phone A's `ConnectivitySyncCoordinator` (already wired to the laptop's
+   hotspot) drains the outbox within 3 s of any state change, so the
+   3 carried requests POST to `/api/v1/sync` straight away.
 7. Web admin → `/admin/requests` should now show all 3 of Phone B's
-   requests tagged with `forwarder_peer_id`.
+   requests.
 
 Pass criteria: 3 forwarded requests visible in the relay's admin UI
-without Phone B ever touching the internet.
+without Phone B ever touching the laptop. (Subsequent runs that have
+Phone B directly re-join the hotspot would skip steps 3–6 entirely and
+upload straight to the relay — A is not privileged.)
 
 ---
 

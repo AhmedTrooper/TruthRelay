@@ -75,8 +75,10 @@ lib/
 
 1. Compose a help request → saved to local Hive box + outbox table.
 2. App stays usable with airplane mode; reads come from local cache.
-3. When online, the **Sync** screen pushes the outbox and pulls new
-   bulletins + requests from the server.
+3. When the phone is in the laptop's hotspot, the **Sync** screen pushes
+   the outbox and pulls new bulletins + requests from the relay. The same
+   drain happens whenever a peer phone carries the outbox back to the
+   hotspot (`POST /api/v1/mesh/forward`).
 4. The relay server dedupes by `id` / `sha256` so duplicates across devices
    don't create noise.
 

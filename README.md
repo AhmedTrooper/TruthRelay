@@ -111,19 +111,19 @@ Crisis updates in TruthRelay are cryptographically signed at the source with **E
 ### 🌐 How Information Spreads 100% Offline (Phone-to-Phone Mesh)
 
 ```
-[ Laptop / Server ] 
+[ Laptop / Server ]
         │ (Wi-Fi)
         ▼
    [ Phone A ]  ──(Walks into crisis zone)──► [ Phone B ] ──(P2P Hop)──► [ Phone C ] ──(P2P Hop)──► [ Phone D ]
-   (Online Sync)                              (Offline Mesh)             (Offline Mesh)             (Offline Mesh)
+   (Connected to laptop)                  (Out of hotspot range)        (Out of hotspot range)        (Out of hotspot range)
 ```
 
-1. **Ingestion**: Phone A connects to the laptop/relay over Wi-Fi and pulls verified bulletins.
-2. **Walking Off-Grid**: Phone A walks into the blackout area where Phones B, C, and D have **no internet and no server connection**.
+1. **Ingestion**: Phone A connects to the laptop/relay over the local hotspot and pulls verified bulletins.
+2. **Walking Off-Grid**: Phone A walks into the blackout area where Phones B, C, and D are **out of the laptop's hotspot range** — they have no path to the relay on their own.
 3. **BLE Discovery**: Phones automatically discover nearby devices via Bluetooth Low Energy (`TR1` protocol).
 4. **Wi-Fi Direct Handoff**: Phones form peer-to-peer Wi-Fi Direct links (or dynamic local hotspots without routers) to exchange bulletins in milliseconds.
 5. **Viral Cascade**: Information cascades phone-to-phone (A ➔ B ➔ C ➔ D) across the crisis area off-grid.
-6. **Reverse Outbox**: Urgent help requests created on Phone D travel backwards (D ➔ C ➔ B ➔ A) and auto-upload to the relay as soon as Phone A reaches Wi-Fi/internet!
+6. **Direct upload the moment any phone reaches the hotspot.** Whichever phone first joins the laptop's hotspot — Phone A, B, or C — drains its own outbox straight into the relay via `POST /api/v1/sync`. If that phone carried posts from peers, those posts reach the relay in the same request (the relay dedupes by UUID and re-verifies signatures, so duplicates across phones are harmless). The full chain D ➔ C ➔ B ➔ A ➔ relay only happens when **no** intermediate phone ever reaches the laptop.
 
 ---
 
@@ -233,12 +233,12 @@ the local upsert collapses it.
    ┌──────────────────────────┐
    │  Vue 3 Admin / PWA       │   signs bulletins with Ed25519
    └──────────────┬───────────┘
-                  │  HTTPS (when internet is up)
+                  │  HTTP (over local hotspot, no internet)
                   ▼
    ┌──────────────────────────┐
    │  Axum Relay + SQLite     │   verifies, dedups, store-and-forward
    └──────────────┬───────────┘
-                  │  HTTPS (when phone is online)
+                  │  HTTP (when phone is in the laptop's hotspot)
                   ▼
    ┌──────────────────────────┐
    │  Flutter Android App     │   offline-first, outbox queue, Hive cache
