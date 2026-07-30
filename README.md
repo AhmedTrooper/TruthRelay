@@ -210,6 +210,55 @@ the local upsert collapses it.
 | Peer-sync UI (transport label, counters, sync now) | ✅ |
 | Demo script (end-to-end offline workflow)   | ✅        |
 
+### Sharing from one phone to another (user steps)
+
+Phones share bulletins and help requests directly — **no UI toggle, no
+hotspot to start, no menu to dig through**. The mesh coordinator picks
+the best transport automatically and runs as soon as peers are nearby.
+Here is the exact user-facing flow:
+
+**Phone A (has the bulletin / the request you want to share):**
+
+1. Open the app — leave it in the foreground. The app immediately starts
+   BLE scanning (5 s on / 30 s off duty cycle) and Wi-Fi Direct discovery.
+2. Do nothing else. As soon as Phone B is in radio range, Phone A's status
+   bar shows the mesh icon and the **Sync** screen (bottom nav → Sync)
+   lists Phone B as a nearby peer within ~10 s.
+3. Optional: open the **Sync** screen → tap **"Sync now (reset peer
+   cooldown)"** to force an immediate session (otherwise the coordinator
+   waits for the next discovery tick).
+4. The session chip on Phone A flips through `awaiting-peer` →
+   `transferring` → `ok`. The "Sent / Received" counters increment.
+
+**Phone B (wants to receive the share):**
+
+1. Open the app on Phone B. The peer row for Phone A appears in the
+   **Sync** screen.
+2. Wait for the session to complete (or tap **Sync now** if you want to
+   jump the queue).
+3. The shared bulletin appears in the **Home** feed, the help request in
+   the **Requests** tab — both pulled from Phone A through the local mesh.
+
+**What the user does NOT have to do:**
+
+- ❌ No "start hotspot" button. The hotspot transport is the *automatic
+  fallback* used only when Wi-Fi Direct group formation fails; the
+  coordinator decides on its own.
+- ❌ No Wi-Fi pairing dialog. Wi-Fi Direct group formation is
+  programmatic (`flutter_p2p_connection`).
+- ❌ No "send to peer" button on each post. Posts are appended to the
+  local outbox, the coordinator drains the outbox into every new peer
+  session automatically.
+- ❌ No internet. None of the three transports (Wi-Fi Direct, BLE,
+  local-only hotspot) touches the global internet.
+
+**Manual override (rare):**
+
+If a peer was just synced and the 5-minute per-peer cooldown is in effect,
+the Sync screen's **"Sync now (reset peer cooldown)"** button forces an
+immediate retry — `MeshCoordinator.forceResync(address)` clears the
+cooldown for that one peer.
+
 ### Web admin status
 
 | Feature                                    | Status   |
