@@ -8,7 +8,7 @@ information matters most. Inspired by *Jogajog* during the July Revolution in
 Bangladesh.
 
 Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
-**JulyHackathon2026**. Licensed MIT.
+**JulyHackathon2026**. Repository: [AhmedTrooper/TruthRelay](https://github.com/AhmedTrooper/TruthRelay). Licensed MIT.
 
 ---
 
@@ -148,6 +148,24 @@ flutter run -d <android-device>
 When the Android emulator can't reach `localhost`, point it at the host
 machine: `flutter run --dart-define=TRUTHRELAY_API_URL=http://10.0.2.2:8080`.
 
+## The 100% Offline Edge-Node Setup (Crisis Scenario)
+
+This project is built so that you can run it entirely without a global internet connection. In a crisis, your laptop becomes the "edge server" and mobiles act as a viral mesh network.
+
+Here is exactly how everything runs completely offline:
+
+1. **Docker just needs to compile (No external DBs):** Because we use SQLite, we don't need Postgres or Redis. Docker simply downloads its basic language environment (Rust, Bun, Debian) to compile the code locally on your laptop. Once compiled, it runs 100% off-grid.
+2. **Expose the local server on your laptop:** Start a local Wi-Fi hotspot on your laptop. The API **must** be exposed so phones can reach it. By setting `TRUTHRELAY_BIND=0.0.0.0:8080`, you expose the server to anyone on your local network.
+3. **Find your laptop's IP and Port:** The IP of your laptop (e.g., `192.168.1.5`) and the exposed port (e.g., `8080`) will be different on different machines.
+   - Run `ipconfig` (Windows) or `ip a` (Linux/Mac) to find your IPv4 address.
+4. **Inject the environment variables into Flutter:** You must explicitly tell the Flutter app where your laptop's local server is located, otherwise it defaults to localhost. You inject this during the build or run step using `--dart-define`:
+   ```bash
+   cd mobile
+   # Replace with your actual laptop IP and Port!
+   flutter run -d <device> --dart-define=TRUTHRELAY_API_URL=http://192.168.1.5:8080
+   ```
+5. **The Viral Mesh Begins:** 2, 3, or 10 mobiles walk up to the laptop's Wi-Fi hotspot and pull the data. They then walk away deeper into the crisis zone. From there, **mobile-to-mobile sync occurs via BLE and Wi-Fi Direct**, completely independent of the laptop!
+
 ## Per-component Make targets
 
 The repo is coordinated by a top-level `Makefile` (run `make` to list targets).
@@ -156,7 +174,8 @@ The repo is coordinated by a top-level `Makefile` (run `make` to list targets).
 
 | Target          | Effect                                                            |
 |-----------------|-------------------------------------------------------------------|
-| `make up`       | `docker compose up -d --build`                                    |
+| `make up` (or `docker-up`) | `docker compose up` (runs in foreground, pulls/uses existing images) |
+| `make up-bg`    | `docker compose up -d --build` (runs in background with forced rebuild) |
 | `make down`     | `docker compose down`                                             |
 | `make rebuild`  | `docker compose build --no-cache`                                 |
 | `make logs`     | `docker compose logs -f`                                          |

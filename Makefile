@@ -86,8 +86,14 @@ mobile-release:    ; $(MAKE) -C mobile release
 
 # ---------- compose ----------
 up:
+	@echo "Starting services in foreground... API: http://localhost:8080, Web: http://localhost:5173"
+	$(COMPOSE) up
+
+docker-up: up
+
+up-bg:
 	$(COMPOSE) up -d --build
-	@echo "✓ Services up. API: http://localhost:8080, Web: http://localhost:5173"
+	@echo "✓ Services up in background. API: http://localhost:8080, Web: http://localhost:5173"
 
 down:
 	$(COMPOSE) down

@@ -87,7 +87,7 @@
   {\Huge\bfseries \projectname\\[0.2cm]}
   \large Verified crisis information over flaky networks\\[0.4cm]
   \normalsize Crisis Tech Track --- JulyHackathon2026\\[0.2cm]
-  \small Team TernaryOps $\cdot$ Repository: \texttt{github.com/TernaryOps/truthrelay}
+  \small Team TernaryOps $\cdot$ Repository: \texttt{github.com/AhmedTrooper/TruthRelay}
 }
 \author{}
 \date{July 2026}
@@ -180,43 +180,58 @@ the link comes back.
   \centering
   \begin{tikzpicture}[
       every node/.style={font=\small\sffamily},
-      phone/.style={rectangle,rounded corners=2pt,draw=trSky,fill=trSky!10,
-                    minimum width=30mm,minimum height=10mm,align=center},
-      relay/.style={rectangle,rounded corners=2pt,draw=trEmerald,
-                    fill=trEmerald!15,minimum width=34mm,minimum height=12mm,
-                    align=center},
-      admin/.style={rectangle,rounded corners=2pt,draw=trViolet,
-                    fill=trViolet!15,minimum width=30mm,minimum height=10mm,
-                    align=center},
-      cloud/.style={ellipse,draw=trSlate,fill=trSlate!10,
-                    minimum width=20mm,minimum height=6mm,align=center},
-      arr/.style={-{Stealth[length=5pt]},thick},
-      mesh/.style={-{Stealth[length=4pt]},thick,trAmber,dashed},
-      grp/.style={rectangle,rounded corners=1pt,draw=trSlate!40,
-                  inner sep=2pt},
+      phone/.style={rectangle,rounded corners=3pt,draw=trSky,fill=trSky!10,
+                    minimum width=32mm,minimum height=12mm,align=center, thick},
+      laptop/.style={rectangle,rounded corners=3pt,draw=trEmerald,
+                    fill=trEmerald!15,minimum width=38mm,minimum height=14mm,
+                    align=center, thick},
+      admin/.style={rectangle,rounded corners=3pt,draw=trViolet,
+                    fill=trViolet!15,minimum width=32mm,minimum height=12mm,
+                    align=center, thick},
+      hotspot/.style={ellipse,draw=trSlate,fill=trSlate!10,
+                    minimum width=26mm,minimum height=8mm,align=center, thick},
+      arr/.style={-{Stealth[length=6pt,width=5pt]},thick,trSlate},
+      mesh/.style={-{Stealth[length=5pt,width=4pt]},very thick,trAmber,dashed},
+      grp/.style={rectangle,rounded corners=2pt,draw=trSlate!40,
+                  inner sep=4pt, thick},
     ]
-    \node[admin] (web) {Vue 3 PWA\\ \scriptsize moderators + KPI};
-    \node[cloud,right=10mm of web] (inet) {Internet};
-    \node[relay,below=14mm of inet] (relay) {Axum + SQLite\\ \scriptsize verifies Ed25519};
-    \node[phone,left=14mm of relay] (phoneA)
-          {Phone A\\(online)};
-    \node[phone,right=14mm of relay] (phoneB)
-          {Phone B\\(offline)};
-    \node[phone,below=18mm of phoneB] (phoneC)
-          {Phone C\\(offline)};
-    \node[grp,fit=(phoneA)(phoneB)(phoneC),
-          label={[trSlate,font=\small\itshape]above:mesh}] (meshgrp) {};
-    \draw[arr] (web) -- (inet);
-    \draw[arr] (inet) -- (relay);
+    
+    % Nodes
+    \node[laptop] (relay) {\textbf{Edge Server (Laptop)}\\ \scriptsize Axum + SQLite (0.0.0.0:8080)\\ \scriptsize Verifies Ed25519};
+    \node[hotspot,above=12mm of relay] (ap) {\textbf{Local Wi-Fi Hotspot}\\ \scriptsize (No Internet)};
+    \node[admin,left=15mm of ap] (web) {\textbf{Vue 3 PWA}\\ \scriptsize Moderator Dashboard};
+    
+    \node[phone,below left=18mm and -10mm of relay] (phoneA) {\textbf{Phone A}\\ \scriptsize Connected to Hotspot};
+    \node[phone,below right=18mm and 5mm of relay] (phoneB) {\textbf{Phone B}\\ \scriptsize Fully Offline};
+    \node[phone,below=20mm of phoneB] (phoneC) {\textbf{Phone C}\\ \scriptsize Fully Offline};
+    \node[phone,left=20mm of phoneC] (phoneD) {\textbf{Phone D}\\ \scriptsize Fully Offline};
+
+    % Connections
+    \draw[arr] (web) -- (ap);
+    \draw[arr] (ap) -- (relay);
     \draw[arr] (relay) -- (phoneA);
-    \draw[mesh] (phoneA) -- (phoneB);
-    \draw[mesh] (phoneB) -- (phoneC);
-    \draw[mesh] (phoneA) -- (phoneC);
+    
+    % Mesh gossip
+    \draw[mesh] (phoneA) -- node[above,font=\tiny,trAmber]{Wi-Fi Direct} (phoneB);
+    \draw[mesh] (phoneB) -- node[right,font=\tiny,trAmber]{BLE} (phoneC);
+    \draw[mesh] (phoneC) -- node[above,font=\tiny,trAmber]{Wi-Fi Direct} (phoneD);
+    \draw[mesh] (phoneA) -- node[left,font=\tiny,trAmber]{BLE} (phoneD);
+
+    % Background group box
+    \begin{scope}[on background layer]
+      \node[grp,fit=(phoneA)(phoneB)(phoneC)(phoneD), fill=trSky!2,
+            label={[trAmber,font=\small\bfseries]above:Viral Peer-to-Peer Mesh}] (meshgrp) {};
+    \end{scope}
+
   \end{tikzpicture}
-  \caption{Three-tier architecture. Solid arrows are over IP; dashed
-           arrows are over the local mesh.}
+  \caption{100\% Offline Edge-Node Architecture. The backend runs on a laptop serving a local Wi-Fi hotspot. Phone A pulls data and virally seeds it to the offline mesh (Phones B, C, D) via BLE and Wi-Fi Direct, completely independent of the global internet.}
   \label{fig:overview}
 \end{figure}
+
+\subsection{The 100\% Offline Edge-Node Setup}
+\label{sec:offline-edge-node}
+
+Crucially, the system is designed to operate completely independent of the global internet. During a crisis, a local laptop hosts the Axum relay server over a self-hosted Wi-Fi hotspot (exposed on \texttt{0.0.0.0:8080}). Mobile devices configure their environment variables (via \texttt{--dart-define}) to point to this specific local IP address and port. The Docker setup requires no heavy external databases (e.g., PostgreSQL or Redis) because it leverages SQLite directly, needing only the base OS environment to compile the code. Once the first phone connects to this local hotspot and fetches the data, it leaves the area and virally propagates the information mobile-to-mobile across the offline mesh via BLE and Wi-Fi Direct.
 
 \subsection{What lives where}
 \label{sec:what-lives-where}

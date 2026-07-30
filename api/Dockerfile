@@ -7,7 +7,7 @@
 #             truthrelay-api:latest
 
 # ---------- build stage ----------
-FROM rust:1-slim-bookworm AS build
+FROM rust:latest AS build
 
 WORKDIR /build
 
