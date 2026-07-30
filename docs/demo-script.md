@@ -25,11 +25,11 @@ saved locally — no internet required."*
 
 ### 1:30 — 2:15 — Sync (45s)
 
-- Toggle **airplane mode OFF** in the emulator.
+- Connect the emulator to the **local laptop Wi-Fi hotspot**.
 - Tap the sync icon → Sync screen → **Push**.
 - `curl http://127.0.0.1:8080/api/v1/requests` now shows the request.
 
-Voiceover: *"When connectivity returns, the local outbox drains. The relay
+Voiceover: *"When connected to a local edge node, the local outbox drains. The relay
 dedupes by UUID so duplicates across phones don't create noise."*
 
 ### 2:15 — 2:45 — Moderator Signs (30s)
@@ -57,8 +57,8 @@ the signature against the registered public key before persisting."*
 
 1. **Screen capture**: OBS or `adb shell screenrecord` for the emulator.
 2. **Web browser**: any Chrome / Firefox on the host machine.
-3. **Backend**: `cd api && TRUTHRELAY_BIND=0.0.0.0:8080 cargo run -- serve`
-4. **Mobile**: `flutter run -d emulator-5554` against the same backend.
+3. **Backend**: `make up` (boots the local Docker crisis mesh instantly).
+4. **Mobile**: Get your laptop's local IP (e.g., `192.168.1.5`), then run `flutter run --dart-define=API_URL=http://192.168.1.5:8080 -d emulator-5554`.
 5. **Lights, microphone**: 1 minute of setup, 2 takes, pick the best.
 
 ## Editing notes

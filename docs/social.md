@@ -9,11 +9,11 @@ When the cellular fabric fails — exactly when trustworthy information matters
 most — TruthRelay still delivers. Citizens compose help requests offline from
 an Android phone. Moderators sign verified bulletins with Ed25519 in a web
 admin. A tiny Rust relay dedupes and store-and-forwards when any one of them
-briefly touches the network.
+connects to a local offline edge node.
 
 ▶️ 3-min demo: <link>
-📂 GitHub: https://github.com/<your-org>/<your-repo>
-📑 Docs: https://github.com/<your-org>/<your-repo>/blob/main/docs/solution.md
+📂 GitHub: https://github.com/AhmedTrooper/TruthRelay
+📑 Docs: https://github.com/AhmedTrooper/TruthRelay/blob/main/docs/solution.md
 
 MIT-licensed. Single Rust binary. No SaaS, no telemetry.
 

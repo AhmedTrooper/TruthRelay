@@ -24,7 +24,7 @@ It runs on Android phones, in a web browser, and on a tiny Rust server
 The **Flutter mobile app** is the citizen-side interface. Every screen reads
 from a local Hive cache, so the app is fully usable with airplane mode on.
 Every write is appended to an **outbox** table that drains opportunistically
-when any connectivity appears — local Wi-Fi, mobile data, even an Axum
+when the phone connects to a local offline edge node — like an Axum
 hotspot opened on a laptop. Each outbox row carries a client-generated UUID,
 so the relay can dedupe across phones without coordination.
 
@@ -123,6 +123,6 @@ Unverified requests still travel — they're tagged *UNVERIFIED NEED* so
 readers know what they're trusting.
 
 **Why it wins.** The system is designed for the *exact moment* the internet
-goes down. No feature requires a live connection. Sync is idempotent.
+goes down. No feature requires the internet to return. Sync is idempotent.
 Everything is MIT-licensed, the binary footprint is tiny, and a single
-`cargo run -- serve` boots the relay in under three seconds.
+`make up` boots the local offline crisis mesh in under three seconds.

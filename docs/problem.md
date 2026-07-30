@@ -21,5 +21,5 @@ will not reach them.
 Today, there is no open-source system that simultaneously (a) lets a citizen
 post an emergency request from an offline phone, (b) hands that request to a
 trusted moderator who can cryptographically sign it, and (c) syncs every
-participant when any one of them briefly touches the network. **TruthRelay
+participant when any one of them connects to a local offline edge node. **TruthRelay
 fills that gap.**

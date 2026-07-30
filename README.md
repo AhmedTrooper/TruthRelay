@@ -14,6 +14,16 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 
 ---
 
+## Pitch & Documentation Materials
+
+* [Problem Statement](docs/problem.md) — Why we built TruthRelay
+* [Solution Architecture](docs/solution.md) — 400-word deep dive into the mesh and trust model
+* [Demo Script](docs/demo-script.md) — Step-by-step 3-minute video guide
+* [Slide Deck](docs/deck.md) — 8-slide presentation outline
+* [Social Media Post](docs/social.md) — Ready-to-publish summary
+* [Elevator Pitch](docs/pitch.md) — 25-word summary
+* [Disclosures](docs/disclosures.md) — Open source attribution and tech stack
+
 ## What it does
 
 - **Citizens (Android app)** compose and read blood requests, missing-person

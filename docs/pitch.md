@@ -5,4 +5,4 @@
 A 25-word pitch:
 
 > When the internet dies, TruthRelay still delivers verified blood requests and
-> safe-route bulletins — signed, deduped, and synced when the link comes back.
+> safe-route bulletins — signed, deduped, and synced across local offline edge nodes.

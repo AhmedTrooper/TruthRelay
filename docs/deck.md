@@ -33,9 +33,9 @@ Three tiers, all offline-first:
 
 ```
 [ Vue 3 Admin / PWA ]   ← signs with Ed25519
-        ↓ HTTPS (when online)
+        ↓ HTTP (local offline Wi-Fi)
 [ Axum (Rust) + SQLite ]  ← verifies, dedups, store-and-forward
-        ↓ HTTPS (when phone is online)
+        ↓ HTTP (local offline Wi-Fi)
 [ Flutter Android App ]   ← offline-first, outbox queue, Hive cache
 ```
 
@@ -80,7 +80,7 @@ All MIT-licensed. No paid SaaS, no telemetry, no third-party auth.
 ## Slide 7 — Demo
 
 - App offline → compose "Blood O+ needed" → entry visible locally.
-- Toggle online → **Push** → server records it (`/api/v1/requests`).
+- Join local edge node Wi-Fi → **Push** → server records it (`/api/v1/requests`).
 - Moderator signs a "Hospital A open" bulletin in the web admin.
 - Mobile **Pull** → bulletin appears with **VERIFIED SAFE** badge.
 - Airplane mode again → app still serves both entries from cache.
