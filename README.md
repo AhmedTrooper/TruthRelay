@@ -148,6 +148,37 @@ Crisis updates in TruthRelay are cryptographically signed at the source with **E
   signature against the registered public key, and store-and-forwards so a phone
   that's been offline for hours can catch up in one round-trip.
 
+### Can a phone post something when offline?
+
+**Yes — and the post is guaranteed to reach the relay eventually, even if the
+posting phone never sees the laptop again.** A post travels through three
+independent triggers in parallel:
+
+1. **Local write.** When the citizen taps "Post" on Phone D, the payload is
+   appended to the local Hive `outbox` box. No network call is made. The app
+   immediately shows the post in the local feed tagged as `UNVERIFIED NEED`.
+2. **Three drain triggers** — whichever fires first wins:
+   - **Direct hotspot.** The moment Phone D sees the laptop's Wi-Fi hotspot
+     (3-second-debounced `connectivity_plus` callback),
+     `SyncService.pushPending()` POSTs the outbox to `/api/v1/sync`. On a 200 it
+     marks each row `markDone()`.
+   - **Background sync.** `workmanager` runs a 15-minute periodic task gated by
+     `NetworkType.CONNECTED`; same `pushPending() + pull()` call.
+   - **Peer carry (the interesting one).** When Phone D is *out of range* of the
+     hotspot, it gossips its outbox over BLE or Wi-Fi Direct to peer phones. Any
+     phone that later reaches the laptop (Phone A in the canonical demo) calls
+     `SyncService.forwardPeerOutbox(forwarderPeerId, peerOutbox)`, which POSTs
+     the carried rows to `POST /api/v1/mesh/forward` with the bearer's peer-id
+     for audit.
+3. **Server-side dedupe.** `POST /api/v1/mesh/forward` runs the *same*
+   idempotent Ed25519-verify + `sha256`-dedupe path as `/api/v1/sync`. The audit
+   log records the `forwarder_peer_id` so the admin dashboard can distinguish
+   "phone pushed its own outbox" from "phone carried a peer's outbox".
+
+The offline phone does not need to mark its own outbox row done — the next time
+it reaches the laptop, `pull()` returns the canonical record from the relay and
+the local upsert collapses it.
+
 ## Why it matters
 
 - Cellular fabric dies first in a crisis; trustworthy info matters most then.

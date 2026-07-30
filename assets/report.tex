@@ -78,6 +78,11 @@
   \titleformat{\subsection}{\normalsize\bfseries\color{trSky}}{\thesubsection}{0.5em}{}
   \titleformat{\subsubsection}{\small\bfseries\color{trAmber}}{\thesubsubsection}{0.5em}{}
 
+% Allow inline-code long words to break across lines and tolerate tight
+% margins so bulleted lists with \texttt{} do not push over the right edge.
+\emergencystretch=2em
+\sloppy
+
 % ---------------------------------------------------------------- header ---
 \newcommand{\projectname}{TruthRelay}
 
@@ -102,17 +107,20 @@
 \begin{abstract}
 \noindent
 \projectname{} is an offline-first three-tier system for verified
-crisis information. A Flutter Android client, a Rust/Axum relay with
-SQLite, and a Vue 3 PWA admin together deliver signed bulletins and
-help requests over HTTP, Wi-Fi Direct, BLE, and a local-only hotspot
-when no internet is available. Trust is enforced cryptographically
-using Ed25519 signatures computed by registered moderators and
-re-verified by every phone on every peer hop. Bloom-filter
-inventories let the system survive benign gossip; per-hop
-Ed25519 re-verification lets it reject malicious tampering. The
-relay is a single Cargo binary; the mobile app targets Android~5.0
-and runs on two-generation-old hardware; the admin PWA installs in
-any modern browser.
+crisis information that runs \emph{entirely without a global internet
+connection}. A Flutter Android client, a Rust/Axum relay with
+SQLite, and a Vue 3 PWA admin are co-deployed on a single laptop
+that exposes a local-only Wi-Fi hotspot. Phones join that hotspot,
+talk to the relay at \texttt{http://\emph{laptop-ip}:8080}, and
+share bulletins and help requests phone-to-phone over Wi-Fi Direct
+or BLE when two phones are out of the laptop's radio range. Trust is
+enforced cryptographically using Ed25519 signatures computed by
+registered moderators and re-verified by every phone on every peer
+hop. Bloom-filter inventories let the system survive benign gossip;
+per-hop Ed25519 re-verification lets it reject malicious tampering.
+The relay is a single Cargo binary; the mobile app targets
+Android~5.0 and runs on two-generation-old hardware; the admin PWA
+installs in any modern browser on the same laptop.
 \end{abstract}
 
 \vspace{0.4cm}
@@ -136,12 +144,12 @@ infrastructure fails}.
 
 Three properties follow directly from that mandate:
 \begin{enumerate}[label=\textbf{\arabic*.}]
-  \item Offline-first. The app must function with no internet and no
-        power for an extended period.
-  \item Trust without central authority. A bulletin that crosses an
-        air-gap cannot rely on the relay to vouch for it.
-  \item Phone-to-phone propagation. Information must keep moving when
-        only a few people still have working radios.
+  \item Offline-only. The system has no public-internet dependency
+        at all; the laptop-hosted hotspot \emph{is} the network.
+  \item Trust without central authority. A bulletin that crosses the
+        mesh cannot rely on the relay to vouch for it.
+  \item Phone-to-phone propagation. Information must keep moving
+        between phones that are out of the laptop's radio range.
 \end{enumerate}
 
 \subsection{What a citizen actually needs in a crisis}
@@ -149,15 +157,16 @@ Three properties follow directly from that mandate:
 
 Five primitives dominate the operational picture:
 \begin{enumerate}[label=\textbf{\arabic*.}]
-  \item \emph{Post a request when the network is dead} (blood, missing
-        person, safe-route).
+  \item \emph{Post a request when no internet is available} (blood,
+        missing person, safe-route).
   \item \emph{Read a moderator-signed update} (verified water source,
         verified curfew end).
-  \item \emph{Hand the request to a phone that briefly has uplink}
-        without re-keying it.
+  \item \emph{Hand the request to a phone that briefly returns to
+        the laptop's hotspot} without re-keying it.
   \item \emph{See, at a glance, whether a piece of information is
         trusted} rather than received.
-  \item \emph{Drain a queue} automatically when connectivity returns.
+  \item \emph{Drain a queue} automatically whenever a peer phone
+        re-joins the local mesh.
 \end{enumerate}
 
 Every feature of \projectname{} maps to one or more of these.
@@ -181,75 +190,104 @@ the link comes back.
   \begin{tikzpicture}[
       every node/.style={font=\small\sffamily},
       phone/.style={rectangle,rounded corners=3pt,draw=trSky,fill=trSky!10,
-                    minimum width=32mm,minimum height=12mm,align=center, thick},
+                    minimum width=30mm,minimum height=12mm,align=center, thick},
       laptop/.style={rectangle,rounded corners=3pt,draw=trEmerald,
-                    fill=trEmerald!15,minimum width=38mm,minimum height=14mm,
+                    fill=trEmerald!15,minimum width=58mm,minimum height=14mm,
                     align=center, thick},
       admin/.style={rectangle,rounded corners=3pt,draw=trViolet,
-                    fill=trViolet!15,minimum width=32mm,minimum height=12mm,
+                    fill=trViolet!15,minimum width=34mm,minimum height=12mm,
                     align=center, thick},
       hotspot/.style={ellipse,draw=trSlate,fill=trSlate!10,
-                    minimum width=26mm,minimum height=8mm,align=center, thick},
+                    minimum width=58mm,minimum height=10mm,align=center, thick},
       arr/.style={-{Stealth[length=6pt,width=5pt]},thick,trSlate},
       mesh/.style={-{Stealth[length=5pt,width=4pt]},very thick,trAmber,dashed},
       grp/.style={rectangle,rounded corners=2pt,draw=trSlate!40,
-                  inner sep=4pt, thick},
+                  inner sep=6pt, thick},
     ]
-    
-    % Nodes
-    \node[laptop] (relay) {\textbf{Edge Server (Laptop)}\\ \scriptsize Axum + SQLite (0.0.0.0:8080)\\ \scriptsize Verifies Ed25519};
-    \node[hotspot,above=12mm of relay] (ap) {\textbf{Local Wi-Fi Hotspot}\\ \scriptsize (No Internet)};
-    \node[admin,left=15mm of ap] (web) {\textbf{Vue 3 PWA}\\ \scriptsize Moderator Dashboard};
-    
-    \node[phone,below left=18mm and -10mm of relay] (phoneA) {\textbf{Phone A}\\ \scriptsize Connected to Hotspot};
-    \node[phone,below right=18mm and 5mm of relay] (phoneB) {\textbf{Phone B}\\ \scriptsize Fully Offline};
-    \node[phone,below=20mm of phoneB] (phoneC) {\textbf{Phone C}\\ \scriptsize Fully Offline};
-    \node[phone,left=20mm of phoneC] (phoneD) {\textbf{Phone D}\\ \scriptsize Fully Offline};
 
-    % Connections
-    \draw[arr] (web) -- (ap);
-    \draw[arr] (ap) -- (relay);
-    \draw[arr] (relay) -- (phoneA);
-    
-    % Mesh gossip
-    \draw[mesh] (phoneA) -- node[above,font=\tiny,trAmber]{Wi-Fi Direct} (phoneB);
-    \draw[mesh] (phoneB) -- node[right,font=\tiny,trAmber]{BLE} (phoneC);
-    \draw[mesh] (phoneC) -- node[above,font=\tiny,trAmber]{Wi-Fi Direct} (phoneD);
-    \draw[mesh] (phoneA) -- node[left,font=\tiny,trAmber]{BLE} (phoneD);
+    % --- Laptop running every tier ---
+    \node[laptop] (laptop) {%
+      \textbf{Laptop (no internet)}\\[1pt]
+      \scriptsize Axum + SQLite on \texttt{0.0.0.0:8080}%
+    };
+    \node[admin,right=14mm of laptop] (web) {%
+      \textbf{Vue 3 PWA}\\[1pt]
+      \scriptsize nginx, same laptop%
+    };
+    \node[hotspot,below=10mm of laptop] (ap) {%
+      \textbf{Local-Only Wi-Fi Hotspot}%
+    };
 
-    % Background group box
+    % --- Phones on the hotspot ---
+    \node[phone,below left=14mm and 6mm of ap] (phoneA) {%
+      \textbf{Phone A}\\[1pt]
+      \scriptsize on hotspot%
+    };
+    \node[phone,below right=14mm and 6mm of ap] (phoneB) {%
+      \textbf{Phone B}\\[1pt]
+      \scriptsize on hotspot%
+    };
+
+    % --- Phones out of hotspot range, in pure mesh ---
+    \node[phone,below=22mm of phoneA] (phoneD) {%
+      \textbf{Phone D}\\[1pt]
+      \scriptsize out of AP range%
+    };
+    \node[phone,below=22mm of phoneB] (phoneC) {%
+      \textbf{Phone C}\\[1pt]
+      \scriptsize out of AP range%
+    };
+
+    % --- Intra-laptop connections ---
+    \draw[arr] (web) -- node[above,font=\tiny]{/api/* proxy} (laptop);
+    \draw[arr] (laptop) -- (ap);
+    \draw[arr] (ap) -- (phoneA);
+    \draw[arr] (ap) -- (phoneB);
+
+    % --- Mesh gossip (Wi-Fi Direct / BLE) ---
+    \draw[mesh] (phoneA) -- node[above,font=\tiny\bfseries,trAmber]{Wi-Fi Direct} (phoneB);
+    \draw[mesh] (phoneB) -- node[right,font=\tiny\bfseries,trAmber]{BLE} (phoneC);
+    \draw[mesh] (phoneC) -- node[below,font=\tiny\bfseries,trAmber]{Wi-Fi Direct} (phoneD);
+    \draw[mesh] (phoneA) -- node[left,font=\tiny\bfseries,trAmber]{BLE} (phoneD);
+
+    % --- Background group box ---
     \begin{scope}[on background layer]
       \node[grp,fit=(phoneA)(phoneB)(phoneC)(phoneD), fill=trSky!2,
             label={[trAmber,font=\small\bfseries]above:Viral Peer-to-Peer Mesh}] (meshgrp) {};
     \end{scope}
 
   \end{tikzpicture}
-  \caption{100\% Offline Edge-Node Architecture. The backend runs on a laptop serving a local Wi-Fi hotspot. Phone A pulls data and virally seeds it to the offline mesh (Phones B, C, D) via BLE and Wi-Fi Direct, completely independent of the global internet.}
+  \caption{100\% offline deployment. A single laptop runs the Axum
+           relay, the Vue~3 admin (served by \texttt{nginx}), and a
+           local-only Wi-Fi hotspot. Phones on the hotspot pull
+           bulletins directly; phones out of range gossip through
+           peer phones over Wi-Fi Direct and BLE. There is no global
+           internet link anywhere in the picture.}
   \label{fig:overview}
 \end{figure}
 
 \subsection{The 100\% Offline Edge-Node Setup}
 \label{sec:offline-edge-node}
 
-Crucially, the system is designed to operate completely independent of the global internet. During a crisis, a local laptop hosts the Axum relay server over a self-hosted Wi-Fi hotspot (exposed on \texttt{0.0.0.0:8080}). Mobile devices configure their environment variables (via \texttt{--dart-define}) to point to this specific local IP address and port. The Docker setup requires no heavy external databases (e.g., PostgreSQL or Redis) because it leverages SQLite directly, needing only the base OS environment to compile the code. Once the first phone connects to this local hotspot and fetches the data, it leaves the area and virally propagates the information mobile-to-mobile across the offline mesh via BLE and Wi-Fi Direct.
+Crucially, the system is designed to operate completely independent of the global internet. During a crisis, a single laptop runs the Axum relay bound to \texttt{0.0.0.0:8080}, an \texttt{nginx} container serving the Vue~3 admin SPA, and a local-only Wi-Fi hotspot that phones join. The Vue~3 SPA is built statically (\texttt{bun\ run\ build}) and proxied by \texttt{nginx} to \texttt{/api/*} on the Axum container, so the admin never opens a cross-origin public request. Mobile devices bake the laptop's hotspot IP into the binary at compile time via \texttt{flutter\ run\ --dart-define=TRUTHRELAY\_API\_URL=http://<laptop-ip>:8080} (the default is \texttt{http://10.0.2.2:8080}, which only matters for the Android emulator). The Docker setup needs no external database; SQLite is opened by Axum directly. Once the first phone connects to the local hotspot and pulls bulletins, it can leave the laptop's radio range and virally propagate everything to other phones over BLE and Wi-Fi Direct.
 
 \subsection{What lives where}
 \label{sec:what-lives-where}
 
 \begin{center}
-\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\begin{tabularx}{\linewidth}{@{}l p{4.2cm} X@{}}
 \toprule
 \textbf{Tier} & \textbf{Component} & \textbf{What it does}\\
 \midrule
 Phone &
-Flutter+Flutter+Riverpod+Hive &
-Read/write local cache; outbox; outbox; render; peer sync.\\
+Flutter + Riverpod + Hive &
+Read/write local cache; outbox; render; peer sync.\\
 Backend &
-Axum 0.8+\texttt{sqlx}+Tokio &
+Axum 0.8 + \texttt{sqlx} + Tokio &
 Verify Ed25519, dedup by \texttt{sha256}, serve
 \texttt{/api/v1/sync} push/pull and \texttt{/api/v1/mesh/forward}.\\
 Admin &
-Vue 3+Naive UI+\texttt{@noble/ed25519} &
+Vue 3 + Naive UI + \texttt{@noble/ed25519} &
 Sign bulletins, inspect canonical bytes, audit relays.\\
 \bottomrule
 \end{tabularx}
@@ -274,18 +312,74 @@ relay in Rust and against the mobile app in Dart.
         \texttt{requestRepoProvider}, \texttt{outboxRepoProvider}).
   \item \textbf{Persistence}: Hive boxes
         (\texttt{bulletins}, \texttt{requests}, \texttt{outbox},
-        \texttt{bloom}, \texttt{mesh\_seen}). Writes are append-only
-        and deduplicate by primary key.
+        \texttt{bloom}, \texttt{mesh\_seen}). Writes are
+        append-only and deduplicate by primary key.
+  \item \textbf{HTTP target}: a single \texttt{Dio} client pointed at
+        \texttt{Env.apiUrl}, baked in at compile time via
+        \texttt{--dart-define=TRUTHRELAY\_API\_URL=}\ldots. The
+        "connectivity" signal is \emph{the laptop hotspot is
+        reachable}, not "the public internet is up".
   \item \textbf{Background work}: \texttt{workmanager} registers a
         15-minute periodic task gated by \texttt{NetworkType.CONNECTED}
         so the outbox drains while the app is closed.
-  \item \textbf{Connectivity}: a 3-second-debounced
+  \item \textbf{Connectivity sync}: a 3-second-debounced
         \texttt{connectivity\_plus} stream fires
-        \texttt{SyncService.pushPending()} then \texttt{pull()} on
-        every online transition. A manual pull is one tap on the Sync
-        screen.
-  \item \textbf{Logging}: \texttt{AppLogger} (\texttt{package:logger}) delivers formatted, emoji-enhanced, leveled console output across startup, outbox sync, and P2P mesh sessions.
+        \texttt{SyncService.pushPending()} then
+        \texttt{pull()} on every \emph{hotspot-available}
+        transition. A manual pull is one tap on the Sync screen.
+  \item \textbf{Logging}: \texttt{AppLogger}
+        (\texttt{package:logger}) delivers formatted, emoji-enhanced,
+        leveled console output across startup, outbox sync, and P2P
+        mesh sessions.
 \end{itemize}
+
+\subsection{Can a phone post something when offline?}
+\label{sec:offline-post}
+
+\textbf{Yes --- and the post is guaranteed to reach the relay
+eventually, even if the posting phone never sees the laptop again.}
+A post travels through three independent triggers in parallel:
+
+\begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.}]
+  \item \textbf{Local write.} When the citizen taps \emph{Post} on
+        Phone~D, the payload is appended to the local Hive
+        \texttt{outbox} box. No network call is made. The app
+        immediately shows the post in the local feed tagged as
+        \texttt{UNVERIFIED~NEED}.
+  \item \textbf{Three drain triggers} --- whichever fires first wins:
+        \begin{itemize}
+          \item \textbf{Direct hotspot.} The moment Phone~D sees the
+                laptop's Wi-Fi hotspot (3-second-debounced
+                \texttt{connectivity\_plus} callback),
+                \texttt{SyncService.pushPending()} POSTs the outbox
+                to \texttt{/api/v1/sync}. On a 200 it marks each row
+                \texttt{markDone()}.
+          \item \textbf{Background sync.} \texttt{workmanager} runs a
+                15-minute periodic task gated by
+                \texttt{NetworkType.CONNECTED}; the same
+                \texttt{pushPending() + pull()} call.
+          \item \textbf{Peer carry (the interesting one).} When
+                Phone~D is \emph{out of range} of the hotspot, it
+                gossips its outbox over BLE or Wi-Fi Direct to peer
+                phones. Any phone that later reaches the laptop
+                (Phone~A in the canonical demo) calls
+                \texttt{SyncService.forwardPeerOutbox(forwarderPeerId,
+                peerOutbox)}, which POSTs the carried rows to
+                \texttt{POST /api/v1/mesh/forward} with the bearer's
+                peer-id for audit.
+        \end{itemize}
+  \item \textbf{Server-side dedupe.}
+        \texttt{POST /api/v1/mesh/forward} runs the \emph{same}
+        idempotent Ed25519-verify + \texttt{sha256}-dedupe path as
+        \texttt{/api/v1/sync}. The audit log records the
+        \texttt{forwarder\_peer\_id} so the admin dashboard can
+        distinguish ``phone pushed its own outbox'' from ``phone
+        carried a peer's outbox''.
+\end{enumerate}
+
+The offline phone does not need to mark its own outbox row done ---
+the next time it reaches the laptop, \texttt{pull()} returns the
+canonical record from the relay and the local upsert collapses it.
 
 \subsection{The relay}
 \label{sec:relay}
@@ -300,13 +394,18 @@ Routes:
 \toprule
 \textbf{Path} & \textbf{Purpose}\\
 \midrule
-\texttt{POST /api/v1/bulletins} & Sign a single bulletin on behalf of a moderator.\\
-\texttt{POST /api/v1/requests} & Queue a help request from a citizen.\\
-\texttt{POST /api/v1/sync} & Bulk push/pull since timestamp, idempotent.\\
-\texttt{POST /api/v1/mesh/forward} & Carrier-side handoff of a peer's outbox.\\
-\texttt{GET  /api/v1/moderators/\{id\}} & Cached Ed25519 public keys for the phone.\\
+\texttt{GET  /healthz} & Liveness probe for the laptop admin.\\
 \texttt{GET  /api/v1/stats} & Live KPI counts for the dashboard.\\
-\texttt{GET  /healthz} & Liveness probe.\\
+\texttt{POST /api/v1/bulletins} & Verify Ed25519, dedup by \texttt{sha256}, persist a moderator-signed bulletin.\\
+\texttt{GET  /api/v1/bulletins} & List latest 200 signed bulletins.\\
+\texttt{GET  /api/v1/bulletins/\{id\}} & Fetch one bulletin by id.\\
+\texttt{POST /api/v1/requests} & Idempotent insert of a citizen help request.\\
+\texttt{GET  /api/v1/requests} & List latest 200 help requests.\\
+\texttt{POST /api/v1/moderators} & Register a moderator's Ed25519 public key (requires \texttt{X-Admin-Token}).\\
+\texttt{GET  /api/v1/moderators/\{id\}} & Fetch a moderator's public key for phone-side verification.\\
+\texttt{POST /api/v1/sync} & Bulk push/pull since timestamp, idempotent.\\
+\texttt{GET  /api/v1/sync?since=}\ldots & Pull-only variant with cursor + limit.\\
+\texttt{POST /api/v1/mesh/forward} & Carrier phone hands off a peer's outbox to the relay.\\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -314,8 +413,7 @@ Routes:
 \subsection{The admin PWA}
 \label{sec:admin}
 
-Five routes (\emph{Mission Control}, \emph{Bulletins}, \emph{Requests},
-\emph{Moderators}, and \emph{Sync}). Features 1-Click Moderator Keygen \& Server Registration directly inside the sign bulletin modal, auto-negotiates admin tokens (\texttt{dev-token-change-me}, \texttt{change-me}), and displays live relay health probes with 1-click retry banners. Everything is signature-aware: the \emph{Signed Bulletin Inspector} renders the exact canonical-bytes, the \texttt{sha256}, and the base64 signature the server will verify.
+The Vue~3 SPA is built into static files (\texttt{bun\ run\ build}) and served by \texttt{nginx} on the same laptop; \texttt{nginx} reverse-proxies \texttt{/api/*} to the Axum process so the admin never makes a cross-origin public request. Five SPA routes (\emph{Mission Control}, \emph{Bulletins}, \emph{Requests}, \emph{Moderators}, and \emph{Sync}). Features 1-Click Moderator Keygen \& Server Registration directly inside the sign-bulletin modal, auto-negotiates the admin token against a small candidate list (a dev convenience, persisted in \texttt{localStorage}), and displays live relay health probes with 1-click retry banners. Everything is signature-aware: the \emph{Signed Bulletin Inspector} renders the exact canonical bytes, the \texttt{sha256}, and the base64 signature the server will verify.
 
 % =============================================================================
 %                          4.  TRANSPORT LAYER
@@ -323,37 +421,60 @@ Five routes (\emph{Mission Control}, \emph{Bulletins}, \emph{Requests},
 \section{The Transport Layer}
 \label{sec:transport}
 
-A phone-pair may be online, offline, or in-between. \projectname{}
-covers all three with one protocol.
+A phone may be \emph{in the laptop's hotspot} or \emph{out of it}; in
+both cases it only ever talks to the relay over the laptop's local
+network, or to another phone over a peer transport. There is no
+public-internet path anywhere in \projectname{} --- this section
+describes the only two ways information physically moves.
 
 \begin{figure}[t]
   \centering
   \begin{tikzpicture}[
       every node/.style={font=\small\sffamily},
-      peer/.style={rectangle,rounded corners=2pt,draw=trSky,
-                   fill=trSky!10,minimum width=24mm,minimum height=10mm,
-                   align=center},
-      box/.style={rectangle,rounded corners=2pt,draw=trSlate!50,
-                  fill=trSlate!5,minimum width=24mm,minimum height=10mm,
-                   align=center},
-      arr/.style={-{Stealth[length=5pt]},thick},
-      mesh/.style={-{Stealth[length=4pt]},thick,trAmber,dashed},
+      relay/.style={rectangle,rounded corners=3pt,draw=trEmerald,
+                    fill=trEmerald!15,minimum width=44mm,minimum height=12mm,
+                    align=center, thick},
+      peer/.style={rectangle,rounded corners=3pt,draw=trSky,
+                   fill=trSky!10,minimum width=30mm,minimum height=12mm,
+                   align=center, thick},
+      arr/.style={-{Stealth[length=6pt]},thick,trSlate},
+      mesh/.style={-{Stealth[length=5pt]},thick,trAmber,dashed},
     ]
-    \node[box] (online) {\textbf{Online}\\ \scriptsize IP+TLS};
-    \node[box,right=4mm of online] (mesh) {\textbf{Mesh}\\ \scriptsize Wi-Fi/BLE/Hotspot};
-    \node[box,right=4mm of mesh] (offline) {\textbf{Offline}\\ \scriptsize cache only};
-    \node[peer,below=18mm of online] (pA) {Phone A\\(online)};
-    \node[peer,below=18mm of mesh] (pB) {Phone B\\(online, neighbor offline)};
-    \node[peer,below=18mm of offline] (pC) {Phone C\\(fully offline)};
-    \draw[arr] (online) -- (pA);
-    \draw[arr] (mesh) -- (pB);
-    \draw[arr] (offline) -- (pC);
-    \draw[mesh] (pB.north) -- node[midway,sloped,above,font=\tiny]
-        {BLE advertisement} (pC.north);
-    \draw[mesh] (pB.west) -- node[midway,above,font=\tiny]{carry outbox} (pA.west);
+
+    % Top: the laptop + relay
+    \node[relay] (relay) {%
+      \textbf{Laptop Hotspot}\\
+      \scriptsize Axum relay at \texttt{<laptop-ip>:8080}%
+    };
+
+    % Phone A on the hotspot (direct HTTP)
+    \node[peer,below left=22mm and 22mm of relay] (pA) {%
+      \textbf{Phone A}\\
+      \scriptsize in hotspot range%
+    };
+
+    % Phone B out of hotspot range, mesh-only
+    \node[peer,below right=22mm and 22mm of relay] (pB) {%
+      \textbf{Phone B}\\
+      \scriptsize out of AP range%
+    };
+
+    % Solid direct path: HTTP through the hotspot
+    \draw[arr] (relay) -- node[above left,font=\tiny\bfseries]{HTTP} (pA);
+
+    % Dashed mesh path: peer gossip
+    \draw[mesh] (pA) to[bend right=10] node[below,font=\tiny\bfseries,trAmber]
+        {Wi-Fi Direct / BLE gossip} (pB);
+    \draw[mesh] (pB) to[bend right=10] node[above,font=\tiny\bfseries,trAmber]
+        {carrier $\to$ /api/v1/mesh/forward} (relay);
+
   \end{tikzpicture}
-  \caption{Three runtime profiles. Solid line = client delivers to
-          its own radio. Dashed line = peer-to-peer handoff.}
+  \caption{Two transport paths, no internet. Solid line = the phone
+           talks to the laptop relay directly over the local
+           hotspot. Dashed line = the phone is out of range and
+           must gossip through a peer; whichever peer happens to
+           be near the laptop then drains the carried outbox via
+           \texttt{/api/v1/mesh/forward}.}
   \label{fig:transport-profiles}
 \end{figure}
 
@@ -375,28 +496,29 @@ Each envelope carries a 32-byte \texttt{packet\_id}; the receiver
 deduplicates using a \texttt{seen\_packets} Hive box, the same shape
 the relay's \texttt{seen\_packets} SQL table holds server-side.
 
-\subsection{Four transports, one interface}
+\subsection{Three peer transports, one interface}
 \label{sec:transports}
 
 \begin{center}
-\begin{tabularx}{\linewidth}{@{}lXc@{}}
+\begin{tabularx}{\linewidth}{@{}p{3.2cm} X p{2.6cm}@{}}
 \toprule
-\textbf{Transport} & \textbf{When used} & \textbf{MTU}\\
+\textbf{Peer transport} & \textbf{When used} & \textbf{MTU}\\
 \midrule
-Wi-Fi Direct (\texttt{wifi\_direct\_transport}) &
-Group formable, normal volume & TCP-stream,\\
-BLE GATT (\texttt{ble\_transport}) &
-Wi-Fi Direct blocked or permission denied & $\le$180\,B/frame,\\
-Local-only hotspot (\texttt{local\_hotspot\_transport}) &
-Wi-Fi Direct fails + 1 active hotspot available & TCP-stream,\\
-Carrier (\texttt{/api/v1/mesh/forward}) &
-B neighbour has uplink & HTTPS,\\
+Wi-Fi Direct &
+Group formable, normal volume \newline \scriptsize\texttt{wifi\_direct\_transport} & TCP-stream\\
+BLE GATT &
+Wi-Fi Direct blocked or permission denied \newline \scriptsize\texttt{ble\_transport} & $\le$180\,B/frame\\
+Local-only hotspot &
+Wi-Fi Direct fails; one phone runs \texttt{startLocalOnlyHotspot} \newline \scriptsize\texttt{local\_hotspot\_transport} & TCP-stream\\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-All four share an abstract \texttt{MeshTransport} so the
-\texttt{MeshSession} state machine
+The fourth path --- the \emph{carrier} phone draining a peer's
+outbox through the laptop --- is the same HTTP path the hotspot uses
+(\texttt{POST /api/v1/mesh/forward}), so it does not appear as a
+separate peer transport. All three peer transports share an abstract
+\texttt{MeshTransport} so the \texttt{MeshSession} state machine
 (\emph{idle $\to$ awaiting-peer $\to$ transferring $\to$ done}) is
 written once and reused.
 
@@ -445,26 +567,32 @@ trust verdict \emph{locally on every hop}.
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}[
-      every node/.style={font=\footnotesize\sffamily},
-      peer/.style={rectangle,rounded corners=2pt,draw=trSky,
-                   fill=trSky!5,minimum width=22mm,minimum height=7mm,
-                   align=center},
-      cache/.style={cylinder,shape border rotate=90,aspect=0.18,
-                    draw=trEmerald,fill=trEmerald!10,minimum height=8mm,
-                    minimum width=18mm},
-      arr/.style={-{Stealth[length=4pt]},thick},
-      grp/.style={rectangle,rounded corners=1pt,draw=trSlate!40,
-                  inner sep=2pt},
+      every node/.style={font=\small\sffamily},
+      peer/.style={rectangle,rounded corners=3pt,draw=trSky,
+                   fill=trSky!10,minimum width=26mm,minimum height=11mm,
+                   align=center, thick},
+      cache/.style={cylinder,shape border rotate=90,aspect=0.25,
+                    draw=trEmerald,fill=trEmerald!15,minimum height=11mm,
+                    minimum width=26mm,align=center, thick},
+      verdict/.style={rectangle,rounded corners=3pt,draw=trAmber,
+                    fill=trAmber!10,minimum width=44mm,minimum height=11mm,
+                    align=center, thick},
+      arr/.style={-{Stealth[length=5pt]},thick,trSlate},
     ]
-    \node[cache] (pub) {cached pubkey};
-    \node[peer,above=4mm of pub] (pX) {Phone X};
-    \node[peer,left=8mm of pX] (pA) {Phone A};
-    \node[peer,right=8mm of pX] (pB) {Phone B};
-    \node[below=12mm of pX] (verdict) {\textbf{VERIFIED} \emph{or} \textbf{QUARANTINED}};
-    \draw[arr] (pA) -- node[above,font=\tiny]{signed JSON} (pX);
-    \draw[arr] (pX) -- node[above,font=\tiny]{canonical bytes} (verdict);
-    \draw[arr] (pX) -- node[right,font=\tiny]{Ed25519 verify} (pub);
-    \draw[arr] (verdict) -- (pB);
+
+    % Node layout
+    \node[peer] (pA) {\textbf{Phone A}\\ \scriptsize (Peer Initiator)};
+    \node[peer,right=20mm of pA] (pX) {\textbf{Phone X}\\ \scriptsize (Local Verifier)};
+    \node[cache,above=15mm of pX] (pub) {\textbf{cached pubkey}\\ \scriptsize (Ed25519 Store)};
+    \node[verdict,below=15mm of pX] (verdict) {\textbf{VERIFIED} \emph{or} \textbf{QUARANTINED}\\ \scriptsize (Local Trust Verdict)};
+    \node[peer,right=22mm of verdict] (pB) {\textbf{Phone B}\\ \scriptsize (Next Hop)};
+
+    % Arrow connections
+    \draw[arr] (pA) -- node[above,font=\tiny\bfseries]{signed JSON} (pX);
+    \draw[arr] (pub) -- node[right,font=\tiny\bfseries]{Ed25519 verify} (pX);
+    \draw[arr] (pX) -- node[right,font=\tiny\bfseries]{canonical bytes} (verdict);
+    \draw[arr] (verdict) -- node[above,font=\tiny\bfseries]{forward} (pB);
+
   \end{tikzpicture}
   \caption{Every peer-supplied bulletin is canonicalised, signature
            verified against a cached moderator pubkey, and only then
@@ -485,9 +613,9 @@ value.}
   \item \texttt{false} -- amber \texttt{QUARANTINED} pill;
         body still readable so a citizen can triage a possibly
         legitimate claim.
-  \item \texttt{null} -- the relay has already vouched
-        (\texttt{isServerSupplied=true}); show the same green pill
-        as \texttt{true}.
+  \item \texttt{null} -- the bulletin came straight from the relay,
+        which has already verified the signature server-side; the
+        UI treats this the same as a locally-verified bulletin.
 \end{itemize}
 
 The three values cover the realistic set: server-validated,
@@ -559,7 +687,7 @@ case honestly with the productionisation path:
 \item \textbf{Moderator key rotation.} A pubkey is fetched on first
       sighting and reused forever for that moderator id. A registered
       key change currently forces a manual \texttt{clear()} on the
-      \texttt{ModeratorPublicKeyRepository}. \emph{Fix:} ship a
+      \texttt{Moderator}\allowbreak\texttt{PublicKey}\allowbreak\texttt{Repository}. \emph{Fix:} ship a
       \texttt{MODERATOR\_PUBKEY\_ROTATED} push event in the mesh
       protocol so a phone learns from gossip that it should bust its
       own cache.
@@ -612,11 +740,13 @@ case honestly with the productionisation path:
         peers costs roughly 18--22\% of a 4000\,mAh phone. A future
         commit will move BLE to scanning-only when the screen is off.
   \item \textbf{Relay trust bootstrap.} The relay is the root of
-        trust for moderator public keys. If the relay is replaced by
-        an adversary, every client must refresh its keys out-of-band
-        before it can distinguish a true signature from a forged one.
-        We mitigate by pinning the relay's TLS certificate in the
-        mobile client; full mTLS is on the post-hackathon roadmap.
+        trust for moderator public keys. If the laptop running the
+        relay is replaced by an adversary, every client must refresh
+        its keys out-of-band before it can distinguish a true
+        signature from a forged one. We mitigate by shipping a known
+        moderator public-key set in the mobile binary and warning on
+        any divergence; full key-pinning + mTLS is on the
+        post-hackathon roadmap.
   \item \textbf{Canonical-JSON divergence on a future JSON encoder.}
         The canonical-bytes routine is version-tagged in the
         \texttt{MeshHeader.version} field; any client receiving a
@@ -628,13 +758,13 @@ case honestly with the productionisation path:
 \label{sec:roadmap}
 
 \begin{center}
-\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\begin{tabularx}{\linewidth}{@{}p{3.6cm} p{3.8cm} X@{}}
 \toprule
 \textbf{Limitation} & \textbf{Current Impact} & \textbf{Planned Production Solution}\\
 \midrule
 Soft-AP Client Cap & Max 8--10 phones per hotspot & Hierarchical tree routing over BLE/Wi-Fi Direct.\\
-BLE Battery Drain & ~18--22\% battery over 12\,h & Screen-off duty throttling (5\,s scan / 60\,s sleep; $<$5\% drain).\\
-Unsigned Requests & Help requests tagged UNVERIFIED & Per-user Ed25519 client keypairs generated in mobile storage.\\
+BLE Battery Drain & $\sim$18--22\% battery over 12\,h & Screen-off duty throttling (5\,s scan / 60\,s sleep; $<$5\% drain).\\
+Unsigned Requests & Help requests tagged \texttt{UNVERIFIED} & Per-user Ed25519 client keypairs generated in mobile storage.\\
 Key Rotation & Key changes require cache clear & \texttt{MODERATOR\_PUBKEY\_ROTATED} mesh gossip invalidation packets.\\
 Cleartext P2P & Packets unencrypted over mesh & E2EE mesh transport via X25519 + ChaCha20-Poly1305.\\
 \bottomrule
@@ -673,7 +803,7 @@ The repo ships with assets aimed at non-technical readers:
 a one-page narrative post (\texttt{docs/social.md}), a slide
 deck (\texttt{docs/deck.md}), a 3-minute demo script
 (\texttt{docs/demo-script.md}), and a permissive MIT licence.
-The \texttt{README.md} is written as the entry point for someone
+The \texttt{README.md} is the entry point for someone
 arriving cold from a social share.
 
 % =============================================================================
@@ -686,22 +816,30 @@ arriving cold from a social share.
 field test on two physical phones. The summary:
 
 \begin{enumerate}[leftmargin=*,label=\textbf{Step \arabic*.}]
-  \item Online baseline. Both phones pull the moderator bulletin.
-  \item Offline post. Phone~A posts a help request with no internet.
-  \item Wi-Fi Direct handoff. The two phones sync; the bulletin and
-        request cross the air gap.
-  \item Hotspot fallback. Disable Wi-Fi Direct; same scenario survives
-        over a soft-AP.
-  \item Relay forwarding. The connected phone drains the offline
-        peer's outbox through \texttt{/api/v1/mesh/forward}; the
-        admin UI shows the forwarded rows.
+  \item Hotspot baseline. Both phones join the laptop's Wi-Fi
+        hotspot and pull the moderator bulletin via
+        \texttt{/api/v1/sync}.
+  \item Help request. Phone~A posts a help request --- the laptop
+        has no internet, the relay accepts and persists it.
+  \item Wi-Fi Direct handoff. Move Phone~B out of the hotspot's
+        range; the two phones sync; the bulletin and request cross
+        the air gap.
+  \item Hotspot fallback. Disable Wi-Fi Direct; the same scenario
+        survives over a soft-AP (one phone runs
+        \texttt{startLocalOnlyHotspot}).
+  \item Relay forwarding. Bring the carrier phone back near the
+        laptop; it drains the peer's outbox through
+        \texttt{/api/v1/mesh/forward}; the admin UI shows the
+        forwarded rows (see \nameref{sec:offline-post} for the full
+        chain).
   \item Tamper rejection. Flip a signature on the wire; the receiving
         phone marks the bulletin QUARANTINED.
   \item TTL pruning. Run a clock-injected
-        \texttt{RetentionPolicy} on a synthetic 2000-row load;
+        \texttt{Retention}\allowbreak\texttt{Policy} on a synthetic 2000-row load;
         observe the cap and the 72h/14d TTL hold.
   \item Background sync. Kill the app; within 15~minutes the outbox
-        drains via \texttt{workmanager} without user intervention.
+        drains via \texttt{workmanager} whenever the laptop's
+        hotspot is reachable, without user intervention.
 \end{enumerate}
 
 % =============================================================================
