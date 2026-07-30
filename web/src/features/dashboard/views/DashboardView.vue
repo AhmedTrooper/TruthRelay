@@ -80,19 +80,24 @@ const bulletinsDelta = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-8 animate-fade-in">
-    <header class="flex items-end justify-between flex-wrap gap-3">
+  <div class="space-y-8">
+    <header 
+      v-motion
+      :initial="{ opacity: 0, y: -20 }"
+      :enter="{ opacity: 1, y: 0, transition: { duration: 500, ease: 'easeOut' } }"
+      class="flex items-end justify-between flex-wrap gap-3"
+    >
       <div>
-        <h1 class="text-2xl font-semibold m-0 text-slate-900 dark:text-slate-50">
-          Mission control
+        <h1 class="text-3xl font-bold m-0 text-slate-900 dark:text-white tracking-tight">
+          Mission Control
         </h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 m-0 mt-1">
+        <p class="text-sm text-slate-500 dark:text-slate-400 m-0 mt-1 font-medium">
           A 30-second read on what your relay is currently broadcasting.
         </p>
       </div>
       <button
         type="button"
-        class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+        class="text-xs font-semibold px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-emerald-600 hover:border-emerald-200 dark:text-slate-400 dark:hover:text-emerald-400 dark:hover:border-emerald-800 transition-all shadow-sm bg-white dark:bg-slate-900"
         @click="refresh"
       >
         ↻ Refresh
@@ -107,7 +112,12 @@ const bulletinsDelta = computed(() => {
     </div>
 
     <template v-else>
-      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section 
+        v-motion
+        :initial="{ opacity: 0, y: 30 }"
+        :enter="{ opacity: 1, y: 0, transition: { delay: 100, duration: 600, ease: 'easeOut' } }"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
         <StatCard
           label="Verified bulletins"
           :value="stats?.bulletins ?? 0"
@@ -135,8 +145,13 @@ const bulletinsDelta = computed(() => {
         />
       </section>
 
-      <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="card-soft p-5 lg:col-span-1">
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div 
+          v-motion
+          :initial="{ opacity: 0, scale: 0.95 }"
+          :enter="{ opacity: 1, scale: 1, transition: { delay: 200, duration: 600, ease: 'easeOut' } }"
+          class="surface-tile lg:col-span-1"
+        >
           <div class="flex items-center justify-between mb-3">
             <h2 class="font-semibold m-0 text-slate-900 dark:text-slate-100">
               Bulletin mix
@@ -146,7 +161,12 @@ const bulletinsDelta = computed(() => {
           <SectorDonut :slices="bulletinMix" />
         </div>
 
-        <div class="card-soft p-5 lg:col-span-2">
+        <div 
+          v-motion
+          :initial="{ opacity: 0, scale: 0.95 }"
+          :enter="{ opacity: 1, scale: 1, transition: { delay: 300, duration: 600, ease: 'easeOut' } }"
+          class="surface-tile lg:col-span-2"
+        >
           <div class="flex items-center justify-between mb-3 gap-2">
             <h2 class="font-semibold m-0 text-slate-900 dark:text-slate-100">
               Latest signed bulletin
@@ -167,8 +187,13 @@ const bulletinsDelta = computed(() => {
         </div>
       </section>
 
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="card-soft p-5">
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div 
+          v-motion
+          :initial="{ opacity: 0, y: 20 }"
+          :enter="{ opacity: 1, y: 0, transition: { delay: 400, duration: 600, ease: 'easeOut' } }"
+          class="surface-tile"
+        >
           <div class="flex items-center justify-between mb-3">
             <h2 class="font-semibold m-0 text-slate-900 dark:text-slate-100">
               Recent bulletins
@@ -203,7 +228,12 @@ const bulletinsDelta = computed(() => {
           </ul>
         </div>
 
-        <div class="card-soft p-5">
+        <div 
+          v-motion
+          :initial="{ opacity: 0, y: 20 }"
+          :enter="{ opacity: 1, y: 0, transition: { delay: 500, duration: 600, ease: 'easeOut' } }"
+          class="surface-tile"
+        >
           <div class="flex items-center justify-between mb-3">
             <h2 class="font-semibold m-0 text-slate-900 dark:text-slate-100">
               Recent help requests

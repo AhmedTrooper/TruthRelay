@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import {
-  NCard,
   NInput,
   NButton,
   NSpace,
@@ -56,67 +55,86 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6 max-w-3xl animate-fade-in">
-    <header>
-      <h1 class="text-2xl font-semibold m-0 text-slate-900 dark:text-slate-50">
-        Moderators
+  <div class="space-y-6 max-w-4xl mx-auto">
+    <header 
+      v-motion
+      :initial="{ opacity: 0, y: -20 }"
+      :enter="{ opacity: 1, y: 0, transition: { duration: 500, ease: 'easeOut' } }"
+      class="flex flex-col gap-1"
+    >
+      <h1 class="text-3xl font-bold m-0 text-slate-900 dark:text-white tracking-tight">
+        Moderator Keys
       </h1>
-      <p class="text-sm text-slate-500 dark:text-slate-400 m-0 mt-1">
+      <p class="text-sm text-slate-500 dark:text-slate-400 m-0 font-medium">
         Mint a keypair on the relay, import it here, then sign bulletins with it.
       </p>
     </header>
 
-    <NAlert v-if="!moderator.stored" type="info" title="No keypair loaded">
-      Run <code class="text-xs">cargo run -- keygen --name your-name</code> in the <code>api/</code> folder,
+    <NAlert v-if="!moderator.stored" type="info" title="No keypair loaded" class="!rounded-xl">
+      Run <code class="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded">cargo run -- keygen --name your-name</code> in the <code>api/</code> folder,
       then paste the JSON output below.
     </NAlert>
 
-    <NCard v-if="moderator.stored" title="Current keypair">
-      <NSpace vertical>
-        <div class="flex items-center gap-2">
-          <span class="text-slate-500 dark:text-slate-400 text-sm">Name:</span>
-          <NTag round>{{ moderator.stored.name }}</NTag>
-          <NTag v-if="registered" type="success" size="small">Registered on server</NTag>
-          <NTag v-else type="warning" size="small">Local only</NTag>
+    <div 
+      v-if="moderator.stored" 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 150, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile space-y-4"
+    >
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white m-0">Current Keypair</h2>
+      <NSpace vertical size="large">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Name:</span>
+          <NTag round class="!font-semibold">{{ moderator.stored.name }}</NTag>
+          <NTag v-if="registered" type="success" size="small" round>Registered on server</NTag>
+          <NTag v-else type="warning" size="small" round>Local only</NTag>
         </div>
         <div>
-          <span class="text-slate-500 dark:text-slate-400 text-sm">Moderator ID:</span>
-          <code class="text-xs ml-1">{{ moderator.stored.id || '(pending)' }}</code>
+          <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Moderator ID:</span>
+          <code class="text-xs ml-2 bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded-md font-mono">{{ moderator.stored.id || '(pending)' }}</code>
         </div>
         <div>
-          <span class="text-slate-500 dark:text-slate-400 text-sm">Public key:</span>
-          <code class="text-xs ml-1 break-all">{{ moderator.stored.public_key_b64 }}</code>
+          <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Public Key:</span>
+          <code class="text-xs ml-2 break-all bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded-md font-mono text-emerald-600 dark:text-emerald-400">{{ moderator.stored.public_key_b64 }}</code>
         </div>
-        <div class="text-xs text-slate-500 dark:text-slate-400">
-          Fingerprint: <code class="font-mono">{{ shortKey }}</code>
+        <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+          Fingerprint: <code class="font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded-md">{{ shortKey }}</code>
         </div>
-        <NSpace>
+        <NSpace class="pt-2">
           <NButton v-if="!registered" type="primary" :loading="moderator.busy" @click="moderator.register()">
             Register on server
           </NButton>
-          <NButton @click="moderator.clear()">Clear</NButton>
+          <NButton @click="moderator.clear()">Clear Keypair</NButton>
         </NSpace>
       </NSpace>
-    </NCard>
+    </div>
 
-    <NCard title="Import keygen JSON">
-      <NSpace vertical>
+    <div 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 250, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile space-y-4"
+    >
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white m-0">Import Keygen JSON</h2>
+      <NSpace vertical size="large">
         <NInput
           v-model:value="pasted"
           type="textarea"
-          :rows="6"
+          :rows="5"
           placeholder='{"name":"...","public_key_b64":"...","secret_key_b64":"...","created_at":"..."}'
+          class="!rounded-xl"
         />
         <NSpace>
-          <NButton @click="tryParse">Parse</NButton>
-          <NButton v-if="parsed" type="primary" @click="save">Save & register</NButton>
+          <NButton @click="tryParse">Parse JSON</NButton>
+          <NButton v-if="parsed" type="primary" @click="save">Save & Register</NButton>
         </NSpace>
-        <NAlert v-if="parseError" type="error" :title="parseError" />
-        <div v-if="parsed" class="text-xs text-slate-500 dark:text-slate-400 space-y-1">
-          <div>Name: <span class="text-slate-700 dark:text-slate-200">{{ parsed.name }}</span></div>
-          <div class="break-all">Public key: <code>{{ parsed.public_key_b64 }}</code></div>
+        <NAlert v-if="parseError" type="error" :title="parseError" class="!rounded-xl" />
+        <div v-if="parsed" class="text-xs text-slate-500 dark:text-slate-400 space-y-2 bg-slate-100 dark:bg-slate-900 p-3 rounded-xl">
+          <div>Name: <span class="text-slate-900 dark:text-slate-100 font-semibold">{{ parsed.name }}</span></div>
+          <div class="break-all font-mono">Public key: <code class="text-emerald-500">{{ parsed.public_key_b64 }}</code></div>
         </div>
       </NSpace>
-    </NCard>
+    </div>
   </div>
 </template>

@@ -1,25 +1,18 @@
 <script setup lang="ts">
-import { computed, h } from 'vue';
+import { ref, computed } from 'vue';
 import {
   NConfigProvider,
   NMessageProvider,
-  NLayout,
-  NLayoutSider,
-  NLayoutHeader,
-  NLayoutContent,
-  NMenu,
   NIcon,
-  NButton,
   darkTheme,
   lightTheme,
   type GlobalTheme,
   type GlobalThemeOverrides,
 } from 'naive-ui';
-import { RouterLink, RouterView, useRoute } from 'vue-router';
+import { RouterLink, RouterView } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useThemeStore } from './lib/ui/theme';
 
-const route = useRoute();
 const themeStore = useThemeStore();
 const { theme: themeName } = storeToRefs(themeStore);
 
@@ -27,15 +20,23 @@ const activeTheme = computed<GlobalTheme>(() =>
   themeName.value === 'light' ? lightTheme : darkTheme,
 );
 
+const isMobileMenuOpen = ref(false);
+
 const menuOptions = [
-  { label: () => h(RouterLink, { to: '/' }, { default: () => 'Dashboard' }), key: '/' },
-  { label: () => h(RouterLink, { to: '/bulletins' }, { default: () => 'Bulletins' }), key: '/bulletins' },
-  { label: () => h(RouterLink, { to: '/requests' }, { default: () => 'Requests' }), key: '/requests' },
-  { label: () => h(RouterLink, { to: '/moderators' }, { default: () => 'Moderators' }), key: '/moderators' },
-  { label: () => h(RouterLink, { to: '/sync' }, { default: () => 'Sync' }), key: '/sync' },
+  { label: 'Dashboard', key: '/', icon: '📊' },
+  { label: 'Bulletins', key: '/bulletins', icon: '📢' },
+  { label: 'Requests', key: '/requests', icon: '🩸' },
+  { label: 'Moderators', key: '/moderators', icon: '🛡️' },
+  { label: 'Sync', key: '/sync', icon: '🔄' },
 ];
 
-const activeKey = computed(() => route.path);
+function toggleMobileMenu() {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value;
+}
+
+function closeMobileMenu() {
+  isMobileMenuOpen.value = false;
+}
 
 const themeOverrides = computed<GlobalThemeOverrides>(() => ({
   common: {
@@ -49,79 +50,152 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
 <template>
   <NConfigProvider :theme="activeTheme" :theme-overrides="themeOverrides">
     <NMessageProvider>
-      <NLayout has-sider class="min-h-screen">
-        <NLayoutSider
-          bordered
-          collapse-mode="width"
-          :collapsed-width="64"
-          :width="220"
-          show-trigger
-          class="!bg-slate-50 dark:!bg-slate-950"
+      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-500 relative">
+        
+        <!-- Desktop Fixed Left Sidebar -->
+        <aside
+          class="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/60 dark:border-slate-800/60"
         >
-          <div class="px-4 py-5 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
-            <div
-              class="w-9 h-9 rounded-lg flex items-center justify-center text-emerald-400 bg-emerald-500/10 shadow-glow"
-            >
+          <!-- Brand Logo -->
+          <div class="h-16 px-6 flex items-center gap-3 border-b border-slate-200/60 dark:border-slate-800/60">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-emerald-400 bg-emerald-500/10 shadow-glow">
               <NIcon size="20"><span>📡</span></NIcon>
             </div>
-            <div v-if="!$route" class="leading-tight">
-              <p class="font-semibold m-0 text-slate-900 dark:text-slate-100">TruthRelay</p>
-              <p class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400 m-0">
-                Admin
-              </p>
+            <div>
+              <h1 class="font-bold text-base leading-tight text-slate-900 dark:text-slate-100 tracking-tight m-0">TruthRelay</h1>
+              <p class="text-[10px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-semibold m-0">Crisis Mesh</p>
             </div>
           </div>
-          <NMenu
-            mode="vertical"
-            :options="menuOptions"
-            :value="activeKey"
-            class="!bg-transparent"
-          />
-        </NLayoutSider>
-        <NLayout>
-          <NLayoutHeader
-            bordered
-            class="px-6 py-3 flex items-center justify-between !bg-white/70 dark:!bg-slate-950/60 backdrop-blur"
+
+          <!-- Navigation Links -->
+          <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <RouterLink 
+              v-for="item in menuOptions" 
+              :key="item.key" 
+              :to="item.key"
+              class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
+              active-class="!text-emerald-600 dark:!text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 shadow-sm"
+            >
+              <span class="text-lg">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </RouterLink>
+          </nav>
+
+          <!-- Footer Status & Theme Toggle -->
+          <div class="p-4 border-t border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <div class="flex items-center justify-between px-2">
+              <span class="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Relay Online
+              </span>
+              <button 
+                @click="themeStore.toggle()"
+                class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition-colors text-slate-600 dark:text-slate-400"
+              >
+                {{ themeName === 'dark' ? '☀︎ Light' : '☾ Dark' }}
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Mobile Top Bar with Hamburger Toggle -->
+        <div class="md:hidden fixed top-0 left-0 right-0 z-40 h-16 px-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-emerald-400 bg-emerald-500/10">
+              <NIcon size="18"><span>📡</span></NIcon>
+            </div>
+            <span class="font-bold text-base text-slate-900 dark:text-slate-100">TruthRelay</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button 
+              @click="themeStore.toggle()"
+              class="p-2 rounded-lg text-slate-600 dark:text-slate-400"
+            >
+              {{ themeName === 'dark' ? '☀︎' : '☾' }}
+            </button>
+            <button 
+              @click="toggleMobileMenu" 
+              class="p-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <span class="text-xl">☰</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile Drawer Overlay & Sidebar -->
+        <transition name="fade">
+          <div 
+            v-if="isMobileMenuOpen" 
+            class="md:hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm"
+            @click="closeMobileMenu"
+          ></div>
+        </transition>
+
+        <transition name="slide">
+          <aside 
+            v-if="isMobileMenuOpen"
+            class="md:hidden fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between shadow-2xl"
           >
             <div>
-              <p class="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 m-0">
-                Crisis-tech admin
-              </p>
-              <p class="text-sm font-medium text-slate-800 dark:text-slate-100 m-0">
-                Verify bulletins, watch the mesh, dispatch moderators.
-              </p>
+              <div class="flex items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800 mb-6">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center text-emerald-400 bg-emerald-500/10">
+                    <NIcon size="20"><span>📡</span></NIcon>
+                  </div>
+                  <span class="font-bold text-lg text-slate-900 dark:text-white">TruthRelay</span>
+                </div>
+                <button @click="closeMobileMenu" class="text-slate-400 text-xl font-bold p-1">✕</button>
+              </div>
+
+              <nav class="space-y-2">
+                <RouterLink 
+                  v-for="item in menuOptions" 
+                  :key="item.key" 
+                  :to="item.key"
+                  @click="closeMobileMenu"
+                  class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-slate-600 dark:text-slate-400"
+                  active-class="!text-emerald-600 dark:!text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10"
+                >
+                  <span class="text-lg">{{ item.icon }}</span>
+                  <span>{{ item.label }}</span>
+                </RouterLink>
+              </nav>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="hidden md:inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow"></span>
-                Relay online
+
+            <div class="pt-6 border-t border-slate-200 dark:border-slate-800">
+              <span class="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                Relay Active
               </span>
-              <NButton size="small" @click="themeStore.toggle()">
-                {{ themeName === 'dark' ? '☀︎ Light' : '☾ Dark' }}
-              </NButton>
             </div>
-          </NLayoutHeader>
-          <NLayoutContent class="p-6 max-w-6xl mx-auto">
-            <RouterView v-slot="{ Component }">
-              <transition name="fade" mode="out-in">
-                <component :is="Component" />
-              </transition>
-            </RouterView>
-          </NLayoutContent>
-        </NLayout>
-      </NLayout>
+          </aside>
+        </transition>
+
+        <!-- Main Content Area (offset by sidebar on desktop, header on mobile) -->
+        <main class="flex-1 md:pl-64 pt-16 md:pt-0 w-full min-h-screen p-4 sm:p-6 lg:p-8">
+          <RouterView v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </RouterView>
+        </main>
+
+      </div>
     </NMessageProvider>
   </NConfigProvider>
 </template>
 
 <style>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 180ms ease, transform 220ms ease;
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 300ms ease-in-out;
 }
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(6px);
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(-100%);
 }
 </style>

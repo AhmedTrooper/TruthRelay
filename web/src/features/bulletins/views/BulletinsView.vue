@@ -2,8 +2,6 @@
 import { onMounted, ref, h, computed } from 'vue';
 import {
   NDataTable,
-  NButton,
-  NSpace,
   NTag,
   NInput,
   NSwitch,
@@ -100,35 +98,55 @@ const columns: DataTableColumns<BulletinView> = [
 </script>
 
 <template>
-  <div class="space-y-6 animate-fade-in">
-    <header class="flex items-end justify-between flex-wrap gap-3">
+  <div class="space-y-6">
+    <header 
+      v-motion
+      :initial="{ opacity: 0, y: -20 }"
+      :enter="{ opacity: 1, y: 0, transition: { duration: 500, ease: 'easeOut' } }"
+      class="flex items-end justify-between flex-wrap gap-3"
+    >
       <div>
-        <h1 class="text-2xl font-semibold m-0 text-slate-900 dark:text-slate-50">
+        <h1 class="text-3xl font-bold m-0 text-slate-900 dark:text-white tracking-tight">
           Bulletins
         </h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 m-0 mt-1">
+        <p class="text-sm text-slate-500 dark:text-slate-400 m-0 mt-1 font-medium">
           Sign a crisis update and broadcast it to every connected peer.
         </p>
       </div>
-      <NSpace>
-        <NButton @click="store.refresh()">Refresh</NButton>
-        <NButton type="primary" @click="showModal = true">
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="text-xs font-semibold px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-emerald-600 hover:border-emerald-200 dark:text-slate-400 dark:hover:text-emerald-400 dark:hover:border-emerald-800 transition-all shadow-sm bg-white dark:bg-slate-900"
+          @click="store.refresh()"
+        >
+          ↻ Refresh
+        </button>
+        <button
+          type="button"
+          class="text-sm font-semibold px-5 py-2 rounded-full border border-transparent bg-emerald-500 hover:bg-emerald-600 text-white transition-all shadow-md hover:shadow-lg shadow-emerald-500/20"
+          @click="showModal = true"
+        >
           + New bulletin
-        </NButton>
-      </NSpace>
+        </button>
+      </div>
     </header>
 
-    <div class="card-soft p-4 space-y-4">
+    <div 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 150, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile p-4 space-y-5"
+    >
       <div class="flex items-center flex-wrap gap-2">
         <button
           v-for="c in kindChips"
           :key="c.value"
           type="button"
-          class="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide border transition focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          class="px-4 py-1.5 rounded-full text-xs font-bold tracking-wide border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 hover:-translate-y-0.5"
           :class="
             kindFilter === c.value
-              ? `bg-gradient-to-br ${c.accent} border-emerald-400 dark:border-emerald-400 text-slate-900 dark:text-slate-50`
-              : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+              ? `bg-gradient-to-br ${c.accent} border-emerald-400 dark:border-emerald-400 text-slate-900 dark:text-slate-50 shadow-[0_0_15px_rgba(16,185,129,0.15)]`
+              : 'bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
           "
           @click="kindFilter = c.value"
         >
@@ -136,24 +154,31 @@ const columns: DataTableColumns<BulletinView> = [
         </button>
       </div>
 
-      <div class="flex flex-wrap items-center gap-3">
+      <div class="flex flex-wrap items-center gap-4 border-t border-slate-200/50 dark:border-slate-800/50 pt-4">
         <NInput
           v-model:value="search"
           placeholder="Search title, body, or moderator…"
           clearable
-          class="max-w-xs"
+          class="max-w-sm flex-1 !rounded-xl"
         />
-        <NSpace align="center" class="ml-auto">
-          <span class="text-xs text-slate-500 dark:text-slate-400">Signed only</span>
-          <NSwitch v-model:value="signedOnly" size="small" />
-          <span class="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-            Showing {{ filtered.length }} of {{ items.length }}
+        <div class="flex items-center gap-4 ml-auto">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <NSwitch v-model:value="signedOnly" size="small" />
+            <span class="text-xs font-semibold tracking-wide text-slate-600 dark:text-slate-400 uppercase">Signed only</span>
+          </label>
+          <span class="text-xs font-bold text-slate-400 dark:text-slate-500 tabular-nums bg-slate-100 dark:bg-slate-900 px-3 py-1 rounded-full">
+            {{ filtered.length }} / {{ items.length }}
           </span>
-        </NSpace>
+        </div>
       </div>
     </div>
 
-    <div class="card-soft p-2">
+    <div 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 250, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile p-1 sm:p-2"
+    >
       <NDataTable
         :columns="columns"
         :data="filtered"
@@ -161,7 +186,7 @@ const columns: DataTableColumns<BulletinView> = [
         :bordered="false"
         :single-line="false"
         size="medium"
-        class="!rounded-lg"
+        class="!rounded-xl"
       />
     </div>
 

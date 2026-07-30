@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import {
-  NCard,
   NButton,
   NSpace,
   NAlert,
@@ -218,44 +217,61 @@ const formattedServerTime = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-6 max-w-3xl animate-fade-in">
-    <header>
-      <h1 class="text-2xl font-semibold m-0 text-slate-900 dark:text-slate-50">
-        Sync
+  <div class="space-y-6 max-w-4xl mx-auto">
+    <header 
+      v-motion
+      :initial="{ opacity: 0, y: -20 }"
+      :enter="{ opacity: 1, y: 0, transition: { duration: 500, ease: 'easeOut' } }"
+      class="flex flex-col gap-1"
+    >
+      <h1 class="text-3xl font-bold m-0 text-slate-900 dark:text-white tracking-tight">
+        Sync Control
       </h1>
-      <p class="text-sm text-slate-500 dark:text-slate-400 m-0 mt-1">
+      <p class="text-sm text-slate-500 dark:text-slate-400 m-0 font-medium">
         Pull bulletins and requests from the relay since a given timestamp.
       </p>
     </header>
 
-    <NCard title="Relay health">
-      <NSpace vertical>
+    <div 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 100, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile space-y-4"
+    >
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white m-0">Relay Health</h2>
+      <NSpace vertical size="large">
         <div class="flex items-center gap-3 flex-wrap">
-          <NButton :loading="probeBusy" @click="probeRelay">Probe relay</NButton>
-          <NTag v-if="probe?.ok" type="success" round>
+          <NButton :loading="probeBusy" @click="probeRelay">Probe Relay</NButton>
+          <NTag v-if="probe?.ok" type="success" round class="!font-semibold">
             online · {{ probe.latencyMs }} ms
           </NTag>
-          <NTag v-else-if="probe && !probe.ok" type="error" round>
+          <NTag v-else-if="probe && !probe.ok" type="error" round class="!font-semibold">
             unreachable · {{ probe.error }}
           </NTag>
-          <NTag v-else>probing…</NTag>
+          <NTag v-else round>probing…</NTag>
           <NSpace align="center" class="ml-auto">
-            <span class="text-xs text-slate-500 dark:text-slate-400">Auto-refresh every 60s</span>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Auto-refresh (60s)</span>
             <NSwitch :value="autoRefresh" @update:value="toggleAutoRefresh" />
           </NSpace>
         </div>
       </NSpace>
-    </NCard>
+    </div>
 
-    <NCard title="Pull from server">
-      <NSpace vertical>
-        <NInput v-model:value="since" placeholder="RFC3339 timestamp" />
-        <p class="text-xs text-slate-500 dark:text-slate-400 m-0">
-          Since <code>{{ formattedSince }}</code>
+    <div 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 200, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile space-y-4"
+    >
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white m-0">Pull From Server</h2>
+      <NSpace vertical size="large">
+        <NInput v-model:value="since" placeholder="RFC3339 timestamp" class="!rounded-xl" />
+        <p class="text-xs text-slate-500 dark:text-slate-400 m-0 font-medium">
+          Since <code class="bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded font-mono">{{ formattedSince }}</code>
         </p>
         <NSpace>
           <NButton type="primary" :loading="busy" @click="pull">
-            Pull since…
+            Pull Since…
           </NButton>
         </NSpace>
         <NAlert
@@ -263,41 +279,49 @@ const formattedServerTime = computed(() => {
           type="success"
           :title="lastResult"
           :show-icon="true"
+          class="!rounded-xl"
         >
           Server reported time: <code>{{ formattedServerTime }}</code>
         </NAlert>
-        <NAlert v-if="lastError" type="error" :title="lastError" />
+        <NAlert v-if="lastError" type="error" :title="lastError" class="!rounded-xl" />
         <details v-if="lastPayload" class="text-xs">
-          <summary class="cursor-pointer text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+          <summary class="cursor-pointer text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 font-semibold">
             Show raw response
           </summary>
-          <pre class="mt-2 max-h-80 overflow-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 font-mono text-[11px]">{{ JSON.stringify(lastPayload, null, 2) }}</pre>
+          <pre class="mt-2 max-h-80 overflow-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 font-mono text-[11px]">{{ JSON.stringify(lastPayload, null, 2) }}</pre>
         </details>
       </NSpace>
-    </NCard>
+    </div>
 
-    <NCard title="Peer outbox forwarding">
-      <NSpace vertical>
-        <p class="text-sm text-slate-600 dark:text-slate-300 m-0">
+    <div 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 300, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile space-y-4"
+    >
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white m-0">Peer Outbox Forwarding</h2>
+      <NSpace vertical size="large">
+        <p class="text-sm text-slate-600 dark:text-slate-300 m-0 leading-relaxed">
           When a peer (offline phone) hands us its queued messages, forward them through this
           dashboard to the relay. The server re-verifies every signature and deduplicates by
-          <code>sha256</code> and request <code>id</code>, so partial success is expected.
+          <code class="bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded font-mono text-xs">sha256</code> and request <code class="bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded font-mono text-xs">id</code>, so partial success is expected.
         </p>
         <NInput
           v-model:value="peerOutboxJson"
           type="textarea"
           placeholder='[{"kind":"bulletin","sha256":"…","title":"…","body":"…"}]'
-          :rows="6"
+          :rows="5"
+          class="!rounded-xl font-mono text-xs"
         />
-        <NSpace align="center">
-          <NTag :type="peerOutboxForwarding ? 'success' : 'default'" round>
+        <NSpace align="center" class="pt-1">
+          <NTag :type="peerOutboxForwarding ? 'success' : 'default'" round class="!font-bold uppercase tracking-wider text-[10px]">
             {{ peerOutboxForwarding ? 'armed' : 'idle' }}
           </NTag>
           <NButton
             size="small"
             @click="peerOutboxForwarding = !peerOutboxForwarding"
           >
-            {{ peerOutboxForwarding ? 'Disable' : 'Enable' }} forwarding
+            {{ peerOutboxForwarding ? 'Disable' : 'Enable' }} Forwarding
           </NButton>
           <NButton
             type="primary"
@@ -306,7 +330,7 @@ const formattedServerTime = computed(() => {
             :disabled="!peerOutboxForwarding"
             @click="forwardPeerOutbox"
           >
-            Forward to relay
+            Forward to Relay
           </NButton>
         </NSpace>
         <NAlert
@@ -314,71 +338,81 @@ const formattedServerTime = computed(() => {
           type="success"
           :title="lastForwardResult"
           :show-icon="true"
+          class="!rounded-xl"
         />
         <NAlert
           v-if="lastForwardError"
           type="error"
           :title="lastForwardError"
+          class="!rounded-xl"
         />
         <details v-if="lastForwardPayload" class="text-xs">
-          <summary class="cursor-pointer text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
+          <summary class="cursor-pointer text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 font-semibold">
             Show raw response
           </summary>
-          <pre class="mt-2 max-h-80 overflow-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 font-mono text-[11px]">{{ JSON.stringify(lastForwardPayload, null, 2) }}</pre>
+          <pre class="mt-2 max-h-80 overflow-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-3 font-mono text-[11px]">{{ JSON.stringify(lastForwardPayload, null, 2) }}</pre>
         </details>
       </NSpace>
-    </NCard>
+    </div>
 
-    <NCard title="Forward audit log">
-      <template #header-extra>
+    <div 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 400, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile space-y-4"
+    >
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white m-0">Forward Audit Log</h2>
         <NButton v-if="audit.length" size="tiny" tertiary @click="clearAudit">
-          Clear
+          Clear Log
         </NButton>
-      </template>
-      <NSpace vertical>
+      </div>
+      <NSpace vertical size="large">
         <p class="text-xs text-slate-500 dark:text-slate-400 m-0">
           Last {{ AUDIT_LIMIT }} forward attempts made through this browser. Stored
           locally — never sent to the relay.
         </p>
-        <div v-if="!audit.length" class="py-2">
+        <div v-if="!audit.length" class="py-4">
           <NEmpty size="small" description="No forwards yet from this device" />
         </div>
-        <table v-else class="w-full text-xs">
-          <thead>
-            <tr class="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-              <th class="py-2 pr-3">When</th>
-              <th class="py-2 pr-3">Items</th>
-              <th class="py-2 pr-3">Accepted</th>
-              <th class="py-2 pr-3">Duplicates</th>
-              <th class="py-2 pr-3">Rejected</th>
-              <th class="py-2 pr-3">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(row, i) in audit"
-              :key="i"
-              class="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition"
-            >
-              <td class="py-2 pr-3 text-slate-600 dark:text-slate-300 tabular-nums">
-                {{ dayjs(row.ts).format('MMM D HH:mm:ss') }}
-              </td>
-              <td class="py-2 pr-3 tabular-nums">
-                {{ row.bulletins + row.requests }}
-                <span class="text-slate-500">({{ row.bulletins }}b + {{ row.requests }}r)</span>
-              </td>
-              <td class="py-2 pr-3 text-emerald-600 dark:text-emerald-300 tabular-nums">{{ row.accepted }}</td>
-              <td class="py-2 pr-3 text-slate-500 dark:text-slate-400 tabular-nums">{{ row.duplicates }}</td>
-              <td class="py-2 pr-3 text-rose-600 dark:text-rose-300 tabular-nums">{{ row.rejected }}</td>
-              <td class="py-2 pr-3">
-                <NTag :type="row.ok ? 'success' : 'error'" size="small" round>
-                  {{ row.ok ? 'ok' : 'failed' }}
-                </NTag>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="text-left text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800 font-semibold uppercase tracking-wider text-[10px]">
+                <th class="py-2 pr-3">When</th>
+                <th class="py-2 pr-3">Items</th>
+                <th class="py-2 pr-3">Accepted</th>
+                <th class="py-2 pr-3">Duplicates</th>
+                <th class="py-2 pr-3">Rejected</th>
+                <th class="py-2 pr-3">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-900">
+              <tr
+                v-for="(row, i) in audit"
+                :key="i"
+                class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors"
+              >
+                <td class="py-2.5 pr-3 text-slate-600 dark:text-slate-300 tabular-nums font-mono">
+                  {{ dayjs(row.ts).format('MMM D HH:mm:ss') }}
+                </td>
+                <td class="py-2.5 pr-3 tabular-nums font-medium">
+                  {{ row.bulletins + row.requests }}
+                  <span class="text-slate-400 text-[10px]">({{ row.bulletins }}b + {{ row.requests }}r)</span>
+                </td>
+                <td class="py-2.5 pr-3 text-emerald-600 dark:text-emerald-400 font-semibold tabular-nums">{{ row.accepted }}</td>
+                <td class="py-2.5 pr-3 text-slate-500 dark:text-slate-400 tabular-nums">{{ row.duplicates }}</td>
+                <td class="py-2.5 pr-3 text-rose-600 dark:text-rose-400 font-semibold tabular-nums">{{ row.rejected }}</td>
+                <td class="py-2.5 pr-3">
+                  <NTag :type="row.ok ? 'success' : 'error'" size="small" round class="!font-bold uppercase tracking-wider text-[10px]">
+                    {{ row.ok ? 'ok' : 'failed' }}
+                  </NTag>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </NSpace>
-    </NCard>
+    </div>
   </div>
 </template>
