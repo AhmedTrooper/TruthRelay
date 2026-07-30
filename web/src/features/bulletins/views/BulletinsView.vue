@@ -34,13 +34,15 @@ const kindChips = [
 
 const filtered = computed(() => {
   const needle = search.value.trim().toLowerCase();
-  return items.value.filter((b) => {
+  const list = Array.isArray(items.value) ? items.value : [];
+  return list.filter((b) => {
+    if (!b) return false;
     if (kindFilter.value && b.kind !== kindFilter.value) return false;
     if (signedOnly.value && !b.signature_b64) return false;
     if (!needle) return true;
     return (
-      b.title.toLowerCase().includes(needle) ||
-      b.body.toLowerCase().includes(needle) ||
+      (b.title ?? '').toLowerCase().includes(needle) ||
+      (b.body ?? '').toLowerCase().includes(needle) ||
       (b.moderator_name ?? '').toLowerCase().includes(needle)
     );
   });
@@ -167,7 +169,7 @@ const columns: DataTableColumns<BulletinView> = [
             <span class="text-xs font-semibold tracking-wide text-slate-600 dark:text-slate-400 uppercase">Signed only</span>
           </label>
           <span class="text-xs font-bold text-slate-400 dark:text-slate-500 tabular-nums bg-slate-100 dark:bg-slate-900 px-3 py-1 rounded-full">
-            {{ filtered.length }} / {{ items.length }}
+            {{ filtered.length }} / {{ (items ?? []).length }}
           </span>
         </div>
       </div>

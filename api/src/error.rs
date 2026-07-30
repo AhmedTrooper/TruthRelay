@@ -1,7 +1,7 @@
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use serde_json::json;
 
@@ -32,26 +32,14 @@ pub enum ApiError {
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let (status, code, message) = match &self {
-            ApiError::BadRequest(msg) => (
-                StatusCode::BAD_REQUEST,
-                "bad_request",
-                msg.clone(),
-            ),
+            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "bad_request", msg.clone()),
             ApiError::Unauthorized => (
                 StatusCode::UNAUTHORIZED,
                 "unauthorized",
                 "unauthorized".to_string(),
             ),
-            ApiError::NotFound(msg) => (
-                StatusCode::NOT_FOUND,
-                "not_found",
-                msg.clone(),
-            ),
-            ApiError::Conflict(msg) => (
-                StatusCode::CONFLICT,
-                "conflict",
-                msg.clone(),
-            ),
+            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, "not_found", msg.clone()),
+            ApiError::Conflict(msg) => (StatusCode::CONFLICT, "conflict", msg.clone()),
             ApiError::InvalidSignature => (
                 StatusCode::BAD_REQUEST,
                 "invalid_signature",

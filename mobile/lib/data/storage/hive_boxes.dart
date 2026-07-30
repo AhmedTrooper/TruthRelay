@@ -17,12 +17,12 @@ class HiveBoxes {
   static Future<void> init() async {
     await Hive.initFlutter();
     await Future.wait([
-      Hive.openBox(bulletins),
-      Hive.openBox(requests),
-      Hive.openBox(outbox),
-      Hive.openBox(settings),
-      Hive.openBox(lastSync),
-      Hive.openBox(meshSeen),
+      if (!Hive.isBoxOpen(bulletins)) Hive.openBox<Map>(bulletins),
+      if (!Hive.isBoxOpen(requests)) Hive.openBox<Map>(requests),
+      if (!Hive.isBoxOpen(outbox)) Hive.openBox<Map>(outbox),
+      if (!Hive.isBoxOpen(settings)) Hive.openBox<Map>(settings),
+      if (!Hive.isBoxOpen(lastSync)) Hive.openBox<Map>(lastSync),
+      if (!Hive.isBoxOpen(meshSeen)) Hive.openBox<Map>(meshSeen),
     ]);
   }
 }

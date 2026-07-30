@@ -3,20 +3,18 @@
 //! Owns: routes, DTOs, persistence, signature verification.
 
 use axum::{
+    Json, Router,
     extract::{Path, State},
     http::StatusCode,
     routing::{get, post},
-    Json, Router,
 };
 use base64::Engine;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::crypto::{
-    canonical_bulletin_bytes, decode_signature_b64, sha256_hex, verify_ed25519,
-};
+use crate::crypto::{canonical_bulletin_bytes, decode_signature_b64, sha256_hex, verify_ed25519};
 use crate::error::ApiError;
 use crate::state::AppState;
 
@@ -66,9 +64,13 @@ async fn fetch_pubkey(state: &AppState, moderator_id: &str) -> Result<[u8; 32], 
         .bind(moderator_id)
         .fetch_optional(&state.db)
         .await?;
-    let bytes = row.ok_or_else(|| ApiError::UnknownModerator(moderator_id.to_string()))?.0;
+    let bytes = row
+        .ok_or_else(|| ApiError::UnknownModerator(moderator_id.to_string()))?
+        .0;
     if bytes.len() != 32 {
-        return Err(ApiError::Internal("moderator pubkey has wrong length".into()));
+        return Err(ApiError::Internal(
+            "moderator pubkey has wrong length".into(),
+        ));
     }
     let mut arr = [0u8; 32];
     arr.copy_from_slice(&bytes);
@@ -161,9 +163,7 @@ async fn create(
     Ok((StatusCode::CREATED, Json(view)))
 }
 
-async fn list(
-    State(state): State<AppState>,
-) -> Result<Json<ListResponse<BulletinView>>, ApiError> {
+async fn list(State(state): State<AppState>) -> Result<Json<ListResponse<BulletinView>>, ApiError> {
     let rows: Vec<(
         String,
         String,
@@ -183,7 +183,9 @@ async fn list(
     .await?;
 
     let mut items = Vec::with_capacity(rows.len());
-    for (id, kind, title, body, sha256, status, moderator_id, signature, created_at, received_at) in rows {
+    for (id, kind, title, body, sha256, status, moderator_id, signature, created_at, received_at) in
+        rows
+    {
         items.push(BulletinView {
             id,
             kind,
@@ -230,11 +232,14 @@ async fn get_one(
         row.ok_or_else(|| ApiError::NotFound(format!("bulletin {id}")))?;
 
     // We need moderator_id; redo the query to grab it.
-    let mid_row: Option<(String,)> = sqlx::query_as("SELECT moderator_id FROM bulletins WHERE id = ?")
-        .bind(&id)
-        .fetch_optional(&state.db)
-        .await?;
-    let moderator_id = mid_row.ok_or_else(|| ApiError::NotFound(format!("bulletin {id}")))?.0;
+    let mid_row: Option<(String,)> =
+        sqlx::query_as("SELECT moderator_id FROM bulletins WHERE id = ?")
+            .bind(&id)
+            .fetch_optional(&state.db)
+            .await?;
+    let moderator_id = mid_row
+        .ok_or_else(|| ApiError::NotFound(format!("bulletin {id}")))?
+        .0;
 
     Ok(Json(BulletinView {
         id,
@@ -310,7 +315,9 @@ pub(crate) async fn fetch_since(
     .await?;
 
     let mut items = Vec::with_capacity(rows.len());
-    for (id, kind, title, body, sha256, status, moderator_id, signature, created_at, received_at) in rows {
+    for (id, kind, title, body, sha256, status, moderator_id, signature, created_at, received_at) in
+        rows
+    {
         items.push(BulletinView {
             id,
             kind,

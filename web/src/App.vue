@@ -14,6 +14,9 @@ import { RouterLink, RouterView, useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useThemeStore } from './lib/ui/theme';
 
+import { onMounted, onBeforeUnmount } from 'vue';
+import { api } from './lib/api/client';
+
 const themeStore = useThemeStore();
 const { theme: themeName } = storeToRefs(themeStore);
 const route = useRoute();
@@ -24,6 +27,33 @@ const activeTheme = computed<GlobalTheme>(() =>
 
 const isSidebarCollapsed = ref(false);
 const isMobileMenuOpen = ref(false);
+
+const relayStatus = ref<'probing' | 'connected' | 'disconnected'>('probing');
+const latencyMs = ref<number | null>(null);
+const connectionError = ref<string | null>(null);
+let probeInterval: number | null = null;
+
+async function checkRelayConnection() {
+  const start = performance.now();
+  try {
+    await api.get('/healthz');
+    latencyMs.value = Math.round(performance.now() - start);
+    relayStatus.value = 'connected';
+    connectionError.value = null;
+  } catch (e: any) {
+    relayStatus.value = 'disconnected';
+    connectionError.value = e?.message ?? 'Failed to reach API relay server';
+  }
+}
+
+onMounted(() => {
+  checkRelayConnection();
+  probeInterval = window.setInterval(checkRelayConnection, 15_000);
+});
+
+onBeforeUnmount(() => {
+  if (probeInterval !== null) window.clearInterval(probeInterval);
+});
 
 const menuOptions = [
   { label: 'Dashboard', key: '/', icon: '📊', description: 'Crisis telemetry overview' },
@@ -252,13 +282,29 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
 
             <!-- Right Side: Action Badges & Quick Controls -->
             <div class="flex items-center gap-3 shrink-0">
-              <div class="hidden sm:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
+              <button 
+                type="button"
+                @click="checkRelayConnection"
+                class="hidden sm:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer"
+                :class="
+                  relayStatus === 'connected'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                    : relayStatus === 'disconnected'
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                "
+              >
                 <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  <span v-if="relayStatus === 'connected'" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span 
+                    class="relative inline-flex rounded-full h-2 w-2"
+                    :class="relayStatus === 'connected' ? 'bg-emerald-500' : relayStatus === 'disconnected' ? 'bg-rose-500' : 'bg-amber-500'"
+                  ></span>
                 </span>
-                Mesh Active
-              </div>
+                <span>
+                  {{ relayStatus === 'connected' ? `Relay Online (${latencyMs}ms)` : relayStatus === 'disconnected' ? 'Relay Offline (Click to Retry)' : 'Connecting…' }}
+                </span>
+              </button>
 
               <button 
                 type="button"
@@ -274,6 +320,19 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
 
           <!-- Main Content Area -->
           <main class="flex-1 w-full max-w-full min-w-0 p-4 sm:p-6 lg:p-8">
+            <div v-if="relayStatus === 'disconnected'" class="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 flex items-center justify-between flex-wrap gap-3">
+              <div class="flex items-center gap-3">
+                <span class="text-xl">⚠️</span>
+                <div>
+                  <h3 class="font-bold text-sm m-0">Unable to Connect to API Relay Server</h3>
+                  <p class="text-xs m-0 opacity-90">{{ connectionError }}</p>
+                </div>
+              </div>
+              <button @click="checkRelayConnection" class="text-xs font-semibold px-4 py-2 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition-all shadow-sm">
+                ↻ Retry Connection
+              </button>
+            </div>
+
             <RouterView v-slot="{ Component }">
               <transition name="fade" mode="out-in">
                 <component :is="Component" />

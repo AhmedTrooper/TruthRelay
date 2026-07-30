@@ -15,6 +15,7 @@ RUN bun install --frozen-lockfile
 # Source + build.
 COPY web/ ./
 ENV VITE_API_URL=""
+ENV VITE_ADMIN_TOKEN="dev-token-change-me"
 RUN bun run build
 
 # ---------- runtime stage ----------

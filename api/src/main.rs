@@ -1,6 +1,6 @@
 use clap::Parser;
-use truthrelay_api::{cli::Cli, keygen, run, Cmd};
 use tracing_subscriber::EnvFilter;
+use truthrelay_api::{Cmd, cli::Cli, keygen, run};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

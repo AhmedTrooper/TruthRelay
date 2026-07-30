@@ -6,7 +6,7 @@
 set -euo pipefail
 
 API=${API:-http://127.0.0.1:8080}
-ADMIN_TOKEN=${TRUTHRELAY_ADMIN_TOKEN:-dev-token}
+ADMIN_TOKEN=${TRUTHRELAY_ADMIN_TOKEN:-dev-token-change-me}
 
 echo "### 1. /healthz"
 curl -fsS "$API/healthz" | tee /tmp/tr_health.json

@@ -19,14 +19,24 @@ bun run dev
 
 Vite serves at `http://localhost:5173`.
 
-## Build
+## Key Features & Easy Workflow
+
+1. **⚡ 1-Click Moderator Keygen & Server Registration**:
+   - Click **`+ Sign bulletin`** anywhere in the Web Admin → Click **`⚡ Quick Generate & Register Keypair`**.
+   - Generates an Ed25519 keypair and registers it with the relay automatically.
+2. **🟢 Live Relay Health Probing**:
+   - Header status badge automatically probes `http://localhost:8080/healthz` every 15 seconds, displaying live latency (e.g. `14ms`) and connection alerts with 1-click **Retry**.
+3. **🛡️ Ed25519 Source Signing**:
+   - Bulletins are signed in browser memory using **Canonical JSON** bytes before sending to `POST /api/v1/bulletins`.
+
+## Build (PWA)
 
 ```bash
 bun run build
 bun run preview
 ```
 
-The build output is a PWA: installable from the browser's address bar, registers a service worker, and works offline for cached pages.
+The build output is an offline PWA: installable from the browser's address bar and registers a service worker.
 
 ## Project layout
 

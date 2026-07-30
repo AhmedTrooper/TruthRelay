@@ -11,9 +11,13 @@ export const useBulletinsStore = defineStore('bulletins', () => {
     loading.value = true;
     error.value = null;
     try {
-      items.value = await listBulletins();
+      const res = await listBulletins();
+      items.value = Array.isArray(res) ? res : [];
     } catch (e: any) {
       error.value = e?.message ?? String(e);
+      if (!Array.isArray(items.value)) {
+        items.value = [];
+      }
     } finally {
       loading.value = false;
     }

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { NEmpty, NSkeleton } from 'naive-ui';
 import { useDashboardStore } from '../store';
 import { useBulletinsStore } from '../../bulletins/store';
 import { useRequestsStore } from '../../requests/store';
+import NewBulletinModal from '../../bulletins/components/NewBulletinModal.vue';
 import StatCard from '../../../components/StatCard.vue';
 import SectorDonut from '../../../components/SectorDonut.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
@@ -17,6 +18,8 @@ const requests = useRequestsStore();
 const { stats, loading, error } = storeToRefs(dashboard);
 const { items: bulletinItems } = storeToRefs(bulletins);
 const { items: requestItems } = storeToRefs(requests);
+
+const showModal = ref(false);
 
 let refreshTimer: number | null = null;
 
@@ -36,13 +39,18 @@ async function refresh() {
   ]);
 }
 
-const recentBulletins = computed(() => bulletinItems.value.slice(0, 4));
-const recentRequests = computed(() => requestItems.value.slice(0, 4));
+const bList = computed(() => (Array.isArray(bulletinItems.value) ? bulletinItems.value : []));
+const rList = computed(() => (Array.isArray(requestItems.value) ? requestItems.value : []));
+
+const recentBulletins = computed(() => bList.value.slice(0, 4));
+const recentRequests = computed(() => rList.value.slice(0, 4));
 
 const bulletinMix = computed(() => {
   const counts: Record<string, number> = {};
-  for (const b of bulletinItems.value) {
-    counts[b.kind] = (counts[b.kind] ?? 0) + 1;
+  for (const b of bList.value) {
+    if (b?.kind) {
+      counts[b.kind] = (counts[b.kind] ?? 0) + 1;
+    }
   }
   return [
     { label: 'VerifiedUpdate', value: counts['VerifiedUpdate'] ?? 0, color: '' },
@@ -53,7 +61,7 @@ const bulletinMix = computed(() => {
   ];
 });
 
-const featuredBulletin = computed(() => bulletinItems.value[0] ?? null);
+const featuredBulletin = computed(() => bList.value[0] ?? null);
 const featuredPayload = computed(() =>
   featuredBulletin.value
     ? {
@@ -66,11 +74,9 @@ const featuredPayload = computed(() =>
 );
 
 const bulletinsDelta = computed(() => {
-  if (!stats.value || bulletinItems.value.length < 2) return null;
-  // Heuristic: how recently did the freshest bulletin arrive? For a tiny
-  // demo dataset this reads as a "freshness" hint.
-  const newest = bulletinItems.value[0];
-  const ageMs = newest
+  if (!stats.value || bList.value.length < 2) return null;
+  const newest = bList.value[0];
+  const ageMs = newest?.received_at
     ? Date.now() - new Date(newest.received_at).getTime()
     : Number.POSITIVE_INFINITY;
   if (ageMs < 60 * 60 * 1000) return 1;
@@ -95,13 +101,22 @@ const bulletinsDelta = computed(() => {
           A 30-second read on what your relay is currently broadcasting.
         </p>
       </div>
-      <button
-        type="button"
-        class="text-xs font-semibold px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-emerald-600 hover:border-emerald-200 dark:text-slate-400 dark:hover:text-emerald-400 dark:hover:border-emerald-800 transition-all shadow-sm bg-white dark:bg-slate-900"
-        @click="refresh"
-      >
-        ↻ Refresh
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="text-xs font-semibold px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-emerald-600 hover:border-emerald-200 dark:text-slate-400 dark:hover:text-emerald-400 dark:hover:border-emerald-800 transition-all shadow-sm bg-white dark:bg-slate-900"
+          @click="refresh"
+        >
+          ↻ Refresh
+        </button>
+        <button
+          type="button"
+          class="text-sm font-semibold px-5 py-2 rounded-full border border-transparent bg-emerald-500 hover:bg-emerald-600 text-white transition-all shadow-md hover:shadow-lg shadow-emerald-500/20"
+          @click="showModal = true"
+        >
+          + Sign bulletin
+        </button>
+      </div>
     </header>
 
     <div v-if="loading && !stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -139,7 +154,7 @@ const bulletinsDelta = computed(() => {
         />
         <StatCard
           label="Mesh peers (24h)"
-          :value="bulletinItems.length + requestItems.length"
+          :value="bList.length + rList.length"
           accent="violet"
           hint="combined local cache"
         />
@@ -269,5 +284,10 @@ const bulletinsDelta = computed(() => {
         </div>
       </section>
     </template>
+
+    <NewBulletinModal
+      v-model:show="showModal"
+      @posted="refresh"
+    />
   </div>
 </template>

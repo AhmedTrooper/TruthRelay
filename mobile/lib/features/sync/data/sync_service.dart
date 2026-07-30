@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/logger.dart';
 import '../../bulletins/data/bulletin_repository.dart';
 import '../../bulletins/models/bulletin.dart';
 import '../../requests/data/request_repository.dart';
@@ -38,17 +39,26 @@ class SyncService {
         outbox = _NoIoOutbox();
 
   Future<int> pull() async {
-    final data = await api.pullSync();
-    final bs = (data['bulletins'] as List? ?? []).cast<Map<String, dynamic>>();
-    final rs = (data['requests'] as List? ?? []).cast<Map<String, dynamic>>();
-    await bulletins.upsertMany(bs.map(Bulletin.fromJson).toList());
-    await requests.upsertMany(rs.map(HelpRequest.fromJson).toList());
-    return bs.length + rs.length;
+    try {
+      AppLogger.info('🌐 Pulling sync updates from relay server...');
+      final data = await api.pullSync();
+      final bs = (data['bulletins'] as List? ?? []).cast<Map<String, dynamic>>();
+      final rs = (data['requests'] as List? ?? []).cast<Map<String, dynamic>>();
+      await bulletins.upsertMany(bs.map(Bulletin.fromJson).toList());
+      await requests.upsertMany(rs.map(HelpRequest.fromJson).toList());
+      final total = bs.length + rs.length;
+      AppLogger.info('📥 Pull complete: Received ${bs.length} bulletins, ${rs.length} requests.');
+      return total;
+    } catch (e, st) {
+      AppLogger.error('❌ Sync pull failed', e, st);
+      rethrow;
+    }
   }
 
   Future<int> pushPending() async {
     final pending = await outbox.pending();
     if (pending.isEmpty) return 0;
+    AppLogger.info('📤 Pushing ${pending.length} pending outbox items to relay server...');
 
     final bs = <Map<String, dynamic>>[];
     final rs = <Map<String, dynamic>>[];

@@ -9,13 +9,22 @@ export const api = axios.create({
 });
 
 // Default admin token (must match TRUTHRELAY_ADMIN_TOKEN on the server).
-export const ADMIN_TOKEN =
-  (import.meta.env.VITE_ADMIN_TOKEN as string | undefined) ?? 'dev-token';
+export function getAdminToken(): string {
+  return (
+    localStorage.getItem('truthrelay.admin_token') ||
+    (import.meta.env.VITE_ADMIN_TOKEN as string | undefined) ||
+    'dev-token-change-me'
+  );
+}
+
+export const ADMIN_TOKEN = getAdminToken();
 
 api.interceptors.request.use((cfg) => {
-  // Attach admin token automatically for /moderators writes.
+  // Attach admin token automatically for /moderators writes if not already provided.
   if (cfg.method?.toLowerCase() === 'post' && cfg.url?.endsWith('/moderators')) {
-    cfg.headers.set('X-Admin-Token', ADMIN_TOKEN);
+    if (!cfg.headers.get('X-Admin-Token')) {
+      cfg.headers.set('X-Admin-Token', getAdminToken());
+    }
   }
   return cfg;
 });

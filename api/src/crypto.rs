@@ -10,7 +10,7 @@
 use base64::Engine;
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use crate::error::ApiError;
@@ -88,22 +88,22 @@ pub fn decode_signature_b64(s: &str) -> Result<[u8; 64], ApiError> {
 }
 
 /// Verify an Ed25519 signature over `message` against `pubkey`.
-pub fn verify_ed25519(pubkey: &[u8; 32], message: &[u8], signature: &[u8; 64]) -> Result<(), ApiError> {
+pub fn verify_ed25519(
+    pubkey: &[u8; 32],
+    message: &[u8],
+    signature: &[u8; 64],
+) -> Result<(), ApiError> {
     let vk = VerifyingKey::from_bytes(pubkey)
         .map_err(|_| ApiError::BadRequest("invalid public key bytes".into()))?;
     let sig = Signature::from_bytes(signature);
-    vk.verify(message, &sig).map_err(|_| ApiError::InvalidSignature)
+    vk.verify(message, &sig)
+        .map_err(|_| ApiError::InvalidSignature)
 }
 
 /// Helper: build a `serde_json::Value` with the canonical keys used for signing.
 /// Kept as a sanity-check / debugging aid.
 #[allow(dead_code)]
-pub fn canonical_payload_preview(
-    kind: &str,
-    title: &str,
-    body: &str,
-    created_at: &str,
-) -> Value {
+pub fn canonical_payload_preview(kind: &str, title: &str, body: &str, created_at: &str) -> Value {
     json!({
         "body": body,
         "created_at": created_at,

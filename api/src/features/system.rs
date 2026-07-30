@@ -1,7 +1,7 @@
 //! System feature: healthz and stats endpoints.
 
-use axum::{extract::State, routing::get, Json, Router};
-use serde_json::{json, Value};
+use axum::{Json, Router, extract::State, routing::get};
+use serde_json::{Value, json};
 
 use crate::error::ApiError;
 use crate::state::AppState;
@@ -10,9 +10,7 @@ async fn healthz() -> Json<Value> {
     Json(json!({ "status": "ok" }))
 }
 
-async fn stats(
-    State(state): State<AppState>,
-) -> Result<Json<Value>, ApiError> {
+async fn stats(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
     let bulletins: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM bulletins")
         .fetch_one(&state.db)
         .await?;

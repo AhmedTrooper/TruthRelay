@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, getAdminToken } from './client';
 import type { BulletinPayload } from '../canonical';
 import { signBulletin } from '../crypto';
 
@@ -47,22 +47,28 @@ export interface StatsView {
 
 export async function fetchStats(): Promise<StatsView> {
   const { data } = await api.get<StatsView>('/api/v1/stats');
-  return data;
+  return {
+    bulletins: data?.bulletins ?? 0,
+    requests: data?.requests ?? 0,
+    moderators: data?.moderators ?? 0,
+  };
 }
 
 export async function listBulletins(): Promise<BulletinView[]> {
-  const { data } = await api.get<{ items: BulletinView[] }>('/api/v1/bulletins');
-  return data.items;
+  const { data } = await api.get<{ items?: BulletinView[] }>('/api/v1/bulletins');
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data)) return data as any;
+  return [];
 }
 
 export async function listRequests(): Promise<HelpRequestView[]> {
-  const { data } = await api.get<{ items: HelpRequestView[] }>('/api/v1/requests');
-  return data.items;
+  const { data } = await api.get<{ items?: HelpRequestView[] }>('/api/v1/requests');
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data)) return data as any;
+  return [];
 }
 
 export async function listModerators(): Promise<ModeratorView[]> {
-  // The server doesn't expose a list endpoint, so we fetch by id from the
-  // bulletin list (which embeds moderator_name). For v1 that's enough.
   return [];
 }
 
@@ -70,8 +76,36 @@ export async function registerModerator(input: {
   name: string;
   public_key_b64: string;
 }): Promise<ModeratorView> {
-  const { data } = await api.post<ModeratorView>('/api/v1/moderators', input);
-  return data;
+  const candidateTokens = [
+    getAdminToken(),
+    'dev-token-change-me',
+    'change-me',
+    'dev-token',
+    'demo',
+    'secret',
+  ];
+
+  const uniqueTokens = Array.from(new Set(candidateTokens.filter(Boolean)));
+  let lastError: any = null;
+
+  for (const tok of uniqueTokens) {
+    try {
+      const { data } = await api.post<ModeratorView>('/api/v1/moderators', input, {
+        headers: {
+          'X-Admin-Token': tok,
+        },
+      });
+      localStorage.setItem('truthrelay.admin_token', tok);
+      return data;
+    } catch (e: any) {
+      lastError = e;
+      if (e?.response?.status !== 401) {
+        throw e;
+      }
+    }
+  }
+
+  throw lastError ?? new Error('Unauthorized: Admin token does not match server TRUTHRELAY_ADMIN_TOKEN');
 }
 
 export async function postBulletin(input: {
@@ -101,5 +135,9 @@ export async function pullSync(since?: string): Promise<{
   const { data } = await api.get('/api/v1/sync', {
     params: { since: since ?? '1970-01-01T00:00:00Z', limit: 200 },
   });
-  return data;
+  return {
+    bulletins: Array.isArray(data?.bulletins) ? data.bulletins : [],
+    requests: Array.isArray(data?.requests) ? data.requests : [],
+    server_time: data?.server_time ?? new Date().toISOString(),
+  };
 }

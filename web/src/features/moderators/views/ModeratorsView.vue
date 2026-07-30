@@ -8,6 +8,7 @@ import {
   NTag,
   useMessage,
 } from 'naive-ui';
+import { getAdminToken } from '../../../lib/api/client';
 import { useModeratorStore } from '../store';
 
 const moderator = useModeratorStore();
@@ -16,6 +17,12 @@ const message = useMessage();
 const pasted = ref('');
 const parsed = ref<any | null>(null);
 const parseError = ref<string | null>(null);
+const adminToken = ref(getAdminToken());
+
+function updateAdminToken() {
+  localStorage.setItem('truthrelay.admin_token', adminToken.value.trim());
+  message.success('Admin token saved');
+}
 
 function tryParse() {
   parseError.value = null;
@@ -135,6 +142,28 @@ onMounted(async () => {
           <div class="break-all font-mono">Public key: <code class="text-emerald-500">{{ parsed.public_key_b64 }}</code></div>
         </div>
       </NSpace>
+    </div>
+
+    <div 
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0, transition: { delay: 350, duration: 500, ease: 'easeOut' } }"
+      class="surface-tile space-y-4"
+    >
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white m-0">Relay Admin Token</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400 m-0">
+        Used for <code>POST /api/v1/moderators</code> authorization. Default: <code>dev-token-change-me</code>.
+      </p>
+      <div class="flex items-center gap-3">
+        <NInput
+          v-model:value="adminToken"
+          type="password"
+          show-password-on="click"
+          placeholder="dev-token-change-me"
+          class="!rounded-xl max-w-md"
+        />
+        <NButton type="primary" secondary @click="updateAdminToken">Save Token</NButton>
+      </div>
     </div>
   </div>
 </template>

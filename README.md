@@ -88,6 +88,43 @@ flutter build apk --release --dart-define=TRUTHRELAY_API_URL=http://192.168.1.5:
 # Or from root: make mobile-build API=http://192.168.1.5:8080
 ```
 
+### 🛡️ How Moderator Registration & Bulletin Signing Works
+
+Crisis updates in TruthRelay are cryptographically signed at the source with **Ed25519** signatures before being broadcast.
+
+#### Step 1: Mint or Generate a Moderator Keypair
+- **Option A (Web Dashboard — 1-Click Auto)**: Open `http://localhost:5173`, click **`+ Sign bulletin`** → Click **`⚡ Quick Generate & Register Keypair`**. This creates an Ed25519 keypair and registers it on the server automatically.
+- **Option B (CLI)**: Run `cd api && cargo run -- keygen --name "Your Name"`. Copy the output JSON and paste it into the Web Admin under **Moderators** (`/moderators`).
+
+#### Step 2: Server Registration (`POST /api/v1/moderators`)
+- The server registers your `public_key_b64` under a generated `moderator_id` UUID using the `X-Admin-Token` header.
+- The web dashboard auto-negotiates standard admin tokens (`dev-token-change-me`, `change-me`, etc.) and saves working tokens in `localStorage`.
+
+#### Step 3: Sign & Post a Bulletin (`POST /api/v1/bulletins`)
+1. In the Web Admin or Mobile App, compose your bulletin (Kind: *VerifiedUpdate* or *Debunk*, Title, Body).
+2. The client constructs **byte-identical Canonical JSON** and signs it using your local `secret_key_b64`.
+3. The server verifies the signature against your registered public key and broadcasts the bulletin to all connected peers!
+
+#### Step 4: Mobile App Signing (Android)
+- In the Android app, navigate to **Settings** (`/settings`) → Paste your Keypair JSON. Once saved in secure storage, bulletins composed on mobile are signed locally before being sent over Wi-Fi Direct/BLE mesh or synced to the relay.
+
+### 🌐 How Information Spreads 100% Offline (Phone-to-Phone Mesh)
+
+```
+[ Laptop / Server ] 
+        │ (Wi-Fi)
+        ▼
+   [ Phone A ]  ──(Walks into crisis zone)──► [ Phone B ] ──(P2P Hop)──► [ Phone C ] ──(P2P Hop)──► [ Phone D ]
+   (Online Sync)                              (Offline Mesh)             (Offline Mesh)             (Offline Mesh)
+```
+
+1. **Ingestion**: Phone A connects to the laptop/relay over Wi-Fi and pulls verified bulletins.
+2. **Walking Off-Grid**: Phone A walks into the blackout area where Phones B, C, and D have **no internet and no server connection**.
+3. **BLE Discovery**: Phones automatically discover nearby devices via Bluetooth Low Energy (`TR1` protocol).
+4. **Wi-Fi Direct Handoff**: Phones form peer-to-peer Wi-Fi Direct links (or dynamic local hotspots without routers) to exchange bulletins in milliseconds.
+5. **Viral Cascade**: Information cascades phone-to-phone (A ➔ B ➔ C ➔ D) across the crisis area off-grid.
+6. **Reverse Outbox**: Urgent help requests created on Phone D travel backwards (D ➔ C ➔ B ➔ A) and auto-upload to the relay as soon as Phone A reaches Wi-Fi/internet!
+
 ---
 
 ## Pitch & Documentation Materials

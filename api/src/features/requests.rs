@@ -1,11 +1,6 @@
 //! Help requests feature: blood / supply / missing-person posts.
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    routing::post,
-    Json, Router,
-};
+use axum::{Json, Router, extract::State, http::StatusCode, routing::post};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -67,7 +62,10 @@ async fn create(
     .await?;
 
     if res.rows_affected() == 0 {
-        return Err(ApiError::Conflict(format!("duplicate request id {}", input.id)));
+        return Err(ApiError::Conflict(format!(
+            "duplicate request id {}",
+            input.id
+        )));
     }
 
     Ok((
@@ -199,6 +197,5 @@ pub(crate) async fn fetch_since(
 }
 
 pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/api/v1/requests", post(create).get(list))
+    Router::new().route("/api/v1/requests", post(create).get(list))
 }

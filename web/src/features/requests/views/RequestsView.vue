@@ -23,22 +23,22 @@ const kindOptions = [
 
 const filtered = computed(() => {
   const needle = search.value.trim().toLowerCase();
-  return items.value.filter((r) => {
+  const list = Array.isArray(items.value) ? items.value : [];
+  return list.filter((r) => {
+    if (!r) return false;
     if (kindFilter.value && r.kind !== kindFilter.value) return false;
     if (!needle) return true;
     return (
-      r.title.toLowerCase().includes(needle) ||
-      r.body.toLowerCase().includes(needle)
+      (r.title ?? '').toLowerCase().includes(needle) ||
+      (r.body ?? '').toLowerCase().includes(needle)
     );
   });
 });
 
-const urgentCount = computed(
-  () =>
-    items.value.filter(
-      (r) => r.kind === 'Blood' || r.kind === 'Missing',
-    ).length,
-);
+const urgentCount = computed(() => {
+  const list = Array.isArray(items.value) ? items.value : [];
+  return list.filter((r) => r && (r.kind === 'Blood' || r.kind === 'Missing')).length;
+});
 
 const columns: DataTableColumns<HelpRequestView> = [
   {
@@ -127,7 +127,7 @@ const columns: DataTableColumns<HelpRequestView> = [
         style="width: 200px"
       />
       <span class="text-xs font-bold text-slate-400 dark:text-slate-500 tabular-nums bg-slate-100 dark:bg-slate-900 px-3 py-1 rounded-full ml-auto">
-        {{ filtered.length }} / {{ items.length }} shown
+        {{ filtered.length }} / {{ (items ?? []).length }} shown
       </span>
     </div>
 

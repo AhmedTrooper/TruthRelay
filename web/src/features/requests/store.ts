@@ -11,9 +11,13 @@ export const useRequestsStore = defineStore('requests', () => {
     loading.value = true;
     error.value = null;
     try {
-      items.value = await listRequests();
+      const res = await listRequests();
+      items.value = Array.isArray(res) ? res : [];
     } catch (e: any) {
       error.value = e?.message ?? String(e);
+      if (!Array.isArray(items.value)) {
+        items.value = [];
+      }
     } finally {
       loading.value = false;
     }

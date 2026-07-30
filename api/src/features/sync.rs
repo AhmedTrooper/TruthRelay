@@ -4,9 +4,9 @@
 //! - GET /api/v1/sync?since=<rfc3339>&limit=<n> returns everything since
 
 use axum::{
+    Json, Router,
     extract::{Query, State},
     routing::post,
-    Json, Router,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -78,14 +78,19 @@ async fn push(
         }
     }
 
-    Ok(Json(SyncPushResult { accepted, duplicates }))
+    Ok(Json(SyncPushResult {
+        accepted,
+        duplicates,
+    }))
 }
 
 async fn pull(
     State(state): State<AppState>,
     Query(q): Query<SyncQuery>,
 ) -> Result<Json<SyncPull>, ApiError> {
-    let since = q.since.unwrap_or_else(|| "1970-01-01T00:00:00Z".to_string());
+    let since = q
+        .since
+        .unwrap_or_else(|| "1970-01-01T00:00:00Z".to_string());
     let limit = q.limit.clamp(1, 1000);
 
     let bulletins_vec = bulletins::fetch_since(&state, &since, limit).await?;
@@ -99,6 +104,5 @@ async fn pull(
 }
 
 pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/api/v1/sync", post(push).get(pull))
+    Router::new().route("/api/v1/sync", post(push).get(pull))
 }

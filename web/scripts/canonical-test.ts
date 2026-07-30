@@ -27,7 +27,7 @@ function canonicalBulletin(payload: object): string {
 }
 
 const API = process.env.VITE_API_URL ?? 'http://localhost:8080';
-const ADMIN = process.env.TRUTHRELAY_ADMIN_TOKEN ?? 'dev-token';
+const ADMIN = process.env.TRUTHRELAY_ADMIN_TOKEN ?? 'dev-token-change-me';
 
 async function main() {
   // 1. Mint a keypair.

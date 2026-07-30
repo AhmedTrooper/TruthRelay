@@ -15,6 +15,15 @@ flutter run --dart-define=TRUTHRELAY_API_URL=http://192.168.1.10:8080 \
   -d <android-device>
 ```
 
+## 📡 Offline-First P2P Mesh Architecture
+
+This Android app is built to operate **100% offline** in crisis zones:
+
+1. **BLE Beacon Discovery (`TR1`)**: Phones automatically advertise and discover nearby peer devices over Bluetooth Low Energy.
+2. **Wi-Fi Direct & Soft-AP Hotspots**: After BLE discovery, phones automatically form peer-to-peer Wi-Fi Direct links (or dynamic local hotspots without routers) to exchange bulletins.
+3. **Multi-Hop Cascade**: Information cascades virally from phone to phone (Phone A ➔ Phone B ➔ Phone C ➔ Phone D) across the crisis area.
+4. **Ed25519 Re-verification**: Every phone re-verifies signatures on each hop using canonical JSON. Tampered messages are automatically quarantined.
+
 On an Android emulator, `10.0.2.2` maps to your host's localhost, so the
 default `http://10.0.2.2:8080` works out of the box.
 

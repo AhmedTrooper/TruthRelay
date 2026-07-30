@@ -1,10 +1,10 @@
 //! Moderators feature: register and fetch Ed25519 public keys.
 
 use axum::{
+    Json, Router,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
     routing::{get, post},
-    Json, Router,
 };
 use base64::Engine;
 use chrono::{DateTime, Utc};
@@ -88,16 +88,14 @@ async fn get_one(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<ModeratorView>, ApiError> {
-    let row: Option<(String, Vec<u8>, String)> = sqlx::query_as(
-        "SELECT name, public_key, created_at FROM moderators WHERE id = ?",
-    )
-    .bind(&id)
-    .fetch_optional(&state.db)
-    .await?;
+    let row: Option<(String, Vec<u8>, String)> =
+        sqlx::query_as("SELECT name, public_key, created_at FROM moderators WHERE id = ?")
+            .bind(&id)
+            .fetch_optional(&state.db)
+            .await?;
 
-    let (name, public_key, created_at) = row.ok_or_else(|| {
-        ApiError::NotFound(format!("moderator {id}"))
-    })?;
+    let (name, public_key, created_at) =
+        row.ok_or_else(|| ApiError::NotFound(format!("moderator {id}")))?;
 
     Ok(Json(ModeratorView {
         id,

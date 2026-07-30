@@ -7,22 +7,24 @@ moderator Ed25519 keypairs.
 ## Run
 
 ```bash
-cp .env.example .env
+# 1. Start the API Relay Server
 cargo run -- serve
-# → http://localhost:8080
+# Default bind: 0.0.0.0:8080
+# Default admin token: "change-me" (overridden by TRUTHRELAY_ADMIN_TOKEN)
 ```
 
-## Mint a moderator keypair
+## Mint & Register a Moderator Keypair
 
 ```bash
-cargo run -- keygen --name ahmed-trooper
+# 1. Mint an Ed25519 keypair
+cargo run -- keygen --name "your-name"
 ```
 
-Output (paste the JSON into the web admin or mobile app):
+Output (copy the JSON into Web Admin or Mobile App):
 
 ```json
 {
-  "name": "ahmed-trooper",
+  "name": "your-name",
   "public_key_b64": "...",
   "secret_key_b64": "...",
   "created_at": "...",
@@ -30,17 +32,14 @@ Output (paste the JSON into the web admin or mobile app):
 }
 ```
 
-## Register the moderator
-
+### Register the Moderator with the Relay
 ```bash
 curl -X POST http://localhost:8080/api/v1/moderators \
   -H "Content-Type: application/json" \
   -H "X-Admin-Token: change-me" \
-  -d '{"name":"ahmed-trooper","public_key_b64":"<from keygen>"}'
+  -d '{"name":"your-name","public_key_b64":"<from keygen>"}'
 ```
-
-Response includes the assigned `id`. Use that `id` as `moderator_id` when
-signing bulletins.
+*Note: The Web Dashboard auto-negotiates admin tokens automatically.*
 
 ## API
 

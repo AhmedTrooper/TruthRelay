@@ -18,6 +18,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show immutable;
 
+import '../../../core/logger.dart';
 import '../../sync/data/seen_packets_local.dart';
 import 'mesh_local_inventory.dart';
 import 'mesh_session.dart';
@@ -171,6 +172,7 @@ class MeshCoordinator {
     }
     if (_inFlight >= config.maxConcurrent) return;
 
+    AppLogger.info('📡 Discovered P2P Mesh Peer: ${peer.deviceName} (${peer.deviceAddress})');
     rec.state = _PeerSyncState.inFlight;
     rec.lastAttempt = now;
     unawaited(_runSession(peer, rec));
@@ -181,6 +183,7 @@ class MeshCoordinator {
 
   Future<void> _runSession(MeshPeer peer, _PeerRecord rec) async {
     _inFlight++;
+    AppLogger.info('🤝 Initiating P2P session with ${peer.deviceName}...');
     MeshSessionResult outcome;
     try {
       final req = await buildSession(peer);
@@ -193,8 +196,10 @@ class MeshCoordinator {
         );
       } else {
         outcome = await _runSessionInner(req);
+        AppLogger.info('✅ P2P session complete with ${peer.deviceName}: Sent ${outcome.itemsSent}, Received ${outcome.itemsReceived}');
       }
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('❌ P2P session failed with ${peer.deviceName}', e, st);
       outcome = MeshSessionResult(
         finalState: MeshSessionState.failed,
         itemsSent: 0,
