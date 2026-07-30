@@ -679,6 +679,20 @@ Run all three: `make api-test web-test mobile-test`.
 Tech stack, third-party libraries, and AI tools used are documented in
 [`docs/disclosures.md`](docs/disclosures.md).
 
+---
+
+## ⚠️ Current Limitations & Future Roadmap
+
+> 💡 **Core Crisis Architecture Note**: Absence of internet connectivity is **NOT** a system limitation—it is the foundational design mandate of TruthRelay. The entire system is engineered for 100% off-grid deployment using self-hosted local laptop hotspots, local SQLite/Hive storage, Bluetooth Low Energy (BLE), and Wi-Fi Direct multi-hop peer-to-peer gossip.
+
+| # | Current Limitation | Impact | Planned Future Solution |
+|---|---|---|---|
+| **1** | **Soft-AP Hotspot Client Limit** | Android `WifiManager` limits soft-AP hotspot connections to ~8–10 devices. | **Tree-Structured Mesh Routing**: Upgrade to hierarchical multi-hop tree routing over BLE/Wi-Fi Direct. |
+| **2** | **Continuous Scanning Battery Drain** | Active BLE scanning consumes ~18–22% battery over a 12-hour session. | **Screen-Off Duty Throttling**: Throttle BLE scan duty cycles (5s scan / 60s sleep when screen is off) to drop drain <5%. |
+| **3** | **Unsigned Citizen Requests** | Bulletins are signed with Ed25519; help requests are unverified needs (`UNVERIFIED NEED`). | **Per-User Ed25519 Client Signing**: Issue per-user keypairs in app storage so citizen requests carry signatures. |
+| **4** | **Out-of-Band Key Rotation** | Rotating a moderator key requires clearing the local key repository. | **Mesh Key Rotation Protocol**: Broadcast `MODERATOR_PUBKEY_ROTATED` mesh packets to auto-invalidate stale pubkeys. |
+| **5** | **Cleartext Peer Transfer** | P2P packets travel unencrypted between local phones. | **E2EE Mesh Encryption**: Implement X25519 key exchange + ChaCha20-Poly1305 per-hop encryption. |
+
 ## Submission pointers
 
 | Asset               | File                                     |

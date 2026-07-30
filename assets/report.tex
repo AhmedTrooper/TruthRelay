@@ -284,6 +284,7 @@ relay in Rust and against the mobile app in Dart.
         \texttt{SyncService.pushPending()} then \texttt{pull()} on
         every online transition. A manual pull is one tap on the Sync
         screen.
+  \item \textbf{Logging}: \texttt{AppLogger} (\texttt{package:logger}) delivers formatted, emoji-enhanced, leveled console output across startup, outbox sync, and P2P mesh sessions.
 \end{itemize}
 
 \subsection{The relay}
@@ -305,7 +306,7 @@ Routes:
 \texttt{POST /api/v1/mesh/forward} & Carrier-side handoff of a peer's outbox.\\
 \texttt{GET  /api/v1/moderators/\{id\}} & Cached Ed25519 public keys for the phone.\\
 \texttt{GET  /api/v1/stats} & Live KPI counts for the dashboard.\\
-\texttt{GET  /api/v1/health} & Liveness probe.\\
+\texttt{GET  /healthz} & Liveness probe.\\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -313,12 +314,8 @@ Routes:
 \subsection{The admin PWA}
 \label{sec:admin}
 
-Four routes (\emph{Mission Control}, \emph{Bulletins}, \emph{Requests},
-\emph{Sync}) and a fifth hidden \emph{Moderators} view for key
-administration. Everything is signature-aware: the \emph{Signed
-Bulletin Inspector} renders the exact canonical-bytes, the
-\texttt{sha256}, and the base64 signature the server will verify, so
-a moderator can debug a verification failure without leaving the page.
+Five routes (\emph{Mission Control}, \emph{Bulletins}, \emph{Requests},
+\emph{Moderators}, and \emph{Sync}). Features 1-Click Moderator Keygen \& Server Registration directly inside the sign bulletin modal, auto-negotiates admin tokens (\texttt{dev-token-change-me}, \texttt{change-me}), and displays live relay health probes with 1-click retry banners. Everything is signature-aware: the \emph{Signed Bulletin Inspector} renders the exact canonical-bytes, the \texttt{sha256}, and the base64 signature the server will verify.
 
 % =============================================================================
 %                          4.  TRANSPORT LAYER
@@ -626,6 +623,23 @@ case honestly with the productionisation path:
         frame with an unknown canonicaliser must drop it rather than
         guess. That path is asserted in \texttt{mesh\_protocol\_test}.
 \end{itemize}
+
+\subsection{Future Fix Roadmap}
+\label{sec:roadmap}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+\textbf{Limitation} & \textbf{Current Impact} & \textbf{Planned Production Solution}\\
+\midrule
+Soft-AP Client Cap & Max 8--10 phones per hotspot & Hierarchical tree routing over BLE/Wi-Fi Direct.\\
+BLE Battery Drain & ~18--22\% battery over 12\,h & Screen-off duty throttling (5\,s scan / 60\,s sleep; $<$5\% drain).\\
+Unsigned Requests & Help requests tagged UNVERIFIED & Per-user Ed25519 client keypairs generated in mobile storage.\\
+Key Rotation & Key changes require cache clear & \texttt{MODERATOR\_PUBKEY\_ROTATED} mesh gossip invalidation packets.\\
+Cleartext P2P & Packets unencrypted over mesh & E2EE mesh transport via X25519 + ChaCha20-Poly1305.\\
+\bottomrule
+\end{tabularx}
+\end{center}
 
 % =============================================================================
 %                                9.  IMPACT

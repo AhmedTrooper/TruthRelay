@@ -35,9 +35,9 @@ dedupes by UUID so duplicates across phones don't create noise."*
 ### 2:15 — 2:45 — Moderator Signs (30s)
 
 - Switch to the **Vue admin dashboard** in the browser.
-- **Moderators** page: paste the keygen JSON, click **Save & register**.
-- **Bulletins** → **New bulletin** → kind **VerifiedUpdate**, title
-  "Hospital A is open" → **Sign & post**.
+- Tap **`+ Sign bulletin`** at the top of **Mission Control (Dashboard)**.
+- Tap **`⚡ Quick Generate & Register Keypair`** inside the modal (or paste keygen JSON under **Moderators**).
+- Kind: **VerifiedUpdate**, title: *"Hospital A is open and accepting blood donors"* → **Sign & post**.
 - The bulletin appears in the **Bulletins** list with the moderator's name.
 
 Voiceover: *"Moderators sign bulletins with Ed25519. The server re-verifies
