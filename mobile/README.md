@@ -21,8 +21,12 @@ default `http://10.0.2.2:8080` works out of the box.
 ## Build APK
 
 ```bash
+# Default (10.0.2.2:8080 for Android Emulator):
 flutter build apk --debug      # build/app/outputs/flutter-apk/app-debug.apk
 flutter build apk --release    # build/app/outputs/flutter-apk/app-release.apk
+
+# Target specific relay API URL (e.g. host laptop IP on local Wi-Fi mesh):
+flutter build apk --release --dart-define=TRUTHRELAY_API_URL=http://192.168.1.10:8080
 ```
 
 ## Architecture

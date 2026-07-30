@@ -30,10 +30,10 @@ run:
 	$(FLUTTER) run --dart-define=TRUTHRELAY_API_URL=$(API)
 
 build:
-	$(FLUTTER) build apk --debug
+	$(FLUTTER) build apk --debug --dart-define=TRUTHRELAY_API_URL=$(API)
 
 release:
-	$(FLUTTER) build apk --release
+	$(FLUTTER) build apk --release --dart-define=TRUTHRELAY_API_URL=$(API)
 
 clean:
 	$(FLUTTER) clean

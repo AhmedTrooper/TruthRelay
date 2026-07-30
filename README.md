@@ -14,6 +14,53 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 
 ---
 
+## ⚡ Getting Started (Run in 30 Seconds)
+
+### Requirements & Environment
+- 🐳 **Docker & Docker Compose** (*Required*) — The API server (Rust/Axum/SQLite) and Web Dashboard (Vue 3/Vite/Nginx) run completely inside Docker containers. **No local Rust, Node, or Bun installations are needed.**
+- 📱 **Android Studio & Flutter SDK** (*Optional*) — Only required if you plan to build or run the Android mobile application locally or on an emulator.
+
+### Quick Start: Clone & Run
+```bash
+# 1. Clone the repository
+git clone https://github.com/AhmedTrooper/TruthRelay.git
+cd TruthRelay
+
+# 2. Launch API + Web Admin
+make up
+```
+
+- **Web Admin Dashboard**: [`http://localhost:5173`](http://localhost:5173)
+- **API Relay Server**: [`http://localhost:8080`](http://localhost:8080)
+
+### 🔄 Modifying Code (`make up` vs `make rebuild`)
+- **`make up`**: Runs `docker compose up --build`. Automatically re-compiles modified HTML/CSS/JS or Rust source files when launching containers.
+- **`make rebuild`**: Runs `docker compose build --no-cache`. Use this if you make major structural modifications or need to ensure a clean build without Docker layer caching.
+- **`make up-bg`**: Runs `docker compose up -d --build` in background (detached) mode.
+- **`make down`**: Stops running containers (`docker compose down`).
+
+### 📱 Building & Running the Android Mobile App
+
+The Android app requires Flutter SDK and connects to the relay API via `TRUTHRELAY_API_URL`.
+
+- **Default Target (`http://10.0.2.2:8080`)**: Pointed at host `localhost:8080` for the Android Emulator out-of-the-box.
+- **Physical Device / Local Wi-Fi Mesh (`http://<YOUR_IP>:8080`)**: Pass your machine's IP address when running on physical devices or offline local hotspots.
+
+```bash
+# Option A: Run directly on connected Android device/emulator
+cd mobile
+flutter run --dart-define=TRUTHRELAY_API_URL=http://192.168.1.5:8080
+# Or from root: make mobile-run API=http://192.168.1.5:8080
+
+# Option B: Build standalone APK (Debug or Release)
+cd mobile
+flutter build apk --release --dart-define=TRUTHRELAY_API_URL=http://192.168.1.5:8080
+# Output APK: mobile/build/app/outputs/flutter-apk/app-release.apk
+# Or from root: make mobile-build API=http://192.168.1.5:8080
+```
+
+---
+
 ## Pitch & Documentation Materials
 
 * [Problem Statement](docs/problem.md) — Why we built TruthRelay
@@ -186,7 +233,7 @@ The repo is coordinated by a top-level `Makefile` (run `make` to list targets).
 
 | Target          | Effect                                                            |
 |-----------------|-------------------------------------------------------------------|
-| `make up` (or `docker-up`) | `docker compose up` (runs in foreground, pulls/uses existing images) |
+| `make up` (or `docker-up`) | `docker compose up --build` (runs in foreground, auto-rebuilds modified code) |
 | `make up-bg`    | `docker compose up -d --build` (runs in background with forced rebuild) |
 | `make down`     | `docker compose down`                                             |
 | `make rebuild`  | `docker compose build --no-cache`                                 |
