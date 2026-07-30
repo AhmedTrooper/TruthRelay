@@ -10,6 +10,8 @@ Bangladesh.
 Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 **JulyHackathon2026**. Repository: [AhmedTrooper/TruthRelay](https://github.com/AhmedTrooper/TruthRelay). Licensed MIT.
 
+> 📄 **For the full deep-dive (architecture, trust model, transport layer, corner cases, and diagrams), read the [Project Report (PDF)](assets/report.pdf).**
+
 ---
 
 ## What it does
