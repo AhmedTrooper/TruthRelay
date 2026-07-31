@@ -51,7 +51,12 @@ class _TruthRelayAppState extends ConsumerState<TruthRelayApp> {
     // Kick off the foreground connectivity-driven sync coordinator as soon
     // as the app starts. The provider is read once to attach its lifecycle
     // hooks (Riverpod will dispose it when the widget unmounts).
-    Future.microtask(() => ref.read(connectivitySyncProvider).start());
+    Future.microtask(() {
+      ref.read(connectivitySyncProvider).start();
+      // Boot the mesh coordinator so peer offers (from the hotspot
+      // controller) start a session automatically.
+      ref.read(meshCoordinatorFacadeProvider).start();
+    });
   }
 
   @override

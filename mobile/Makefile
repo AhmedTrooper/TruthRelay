@@ -12,7 +12,7 @@
 # Override the API URL with API=http://host:port
 #   make run API=http://10.0.2.2:8080
 
-API ?= http://10.0.2.2:8080
+API ?= http://192.168.0.195:8080
 FLUTTER := flutter
 
 .PHONY: get analyze test run build release clean

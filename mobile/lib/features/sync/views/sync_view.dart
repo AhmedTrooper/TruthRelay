@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
 import '../../mesh/data/ble_discovery.dart' show DiscoveryStatus;
-import '../../mesh/data/mesh_coordinator.dart' as coord;
-import '../../mesh/data/wifi_direct_discovery.dart' as wifi show MeshPeer;
 import 'sync_view_model.dart';
 
 class SyncView extends ConsumerStatefulWidget {
@@ -19,44 +17,22 @@ class _SyncViewState extends ConsumerState<SyncView> {
   String? _lastResult;
   String? _lastError;
   SyncViewSnapshot _snapshot = SyncViewSnapshot.empty;
-  List<coord.MeshPeer> _peers = const <coord.MeshPeer>[];
-  DiscoveryStatus _status = DiscoveryStatus.idle;
+  final DiscoveryStatus _status = DiscoveryStatus.idle;
 
   @override
   void initState() {
     super.initState();
     // Subscribe to mesh session results once so peer rows update live.
-    ref.read(meshCoordinatorProvider).start();
-    ref.read(meshCoordinatorProvider).results.listen((_) {
+    ref.read(meshCoordinatorFacadeProvider).start();
+    ref.read(meshCoordinatorFacadeProvider).results.listen((_) {
       if (mounted) setState(() {});
-    });
-    // Bridge broadcast streams into cached values (broadcast streams are
-    // racy for late subscribers; this keeps a single live subscription per
-    // stream alive for the lifetime of the screen).
-    final discovery = ref.read(wifiDirectDiscoveryProvider);
-    discovery.peers.listen((peers) {
-      if (!mounted) return;
-      setState(() {
-        _peers = peers
-            .map<coord.MeshPeer>(
-              (wifi.MeshPeer p) => coord.MeshPeer(
-                deviceAddress: p.deviceAddress,
-                deviceName: p.deviceName,
-              ),
-            )
-            .toList();
-      });
-    });
-    discovery.status.listen((status) {
-      if (!mounted) return;
-      setState(() => _status = status);
     });
   }
 
   void _refresh() {
-    final coordinator = ref.read(meshCoordinatorProvider);
+    final coordinator = ref.read(meshCoordinatorFacadeProvider);
     final vm = SyncViewModel(
-      peers: _peers,
+      peers: const [],
       status: _status,
       history: coordinator.history,
     );
@@ -106,7 +82,7 @@ class _SyncViewState extends ConsumerState<SyncView> {
   /// re-runs its backoff gate, so peers that just synced are skipped.
   void _syncNow() {
     for (final row in _snapshot.peers) {
-      ref.read(meshCoordinatorProvider).forceResync(row.deviceAddress);
+      ref.read(meshCoordinatorFacadeProvider).forceResync(row.deviceAddress);
     }
     setState(() {
       _lastResult = 'Re-triggered sync for ${_snapshot.peers.length} peer(s).';
@@ -117,6 +93,7 @@ class _SyncViewState extends ConsumerState<SyncView> {
   @override
   Widget build(BuildContext context) {
     final api = ref.read(apiClientProvider);
+    final hotspot = ref.watch(hotspotSessionProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Sync')),
       body: RefreshIndicator(
@@ -125,6 +102,8 @@ class _SyncViewState extends ConsumerState<SyncView> {
           padding: const EdgeInsets.all(16),
           children: [
             _apiCard(context, api.baseUrl),
+            const SizedBox(height: 16),
+            _hotspotCard(context, hotspot),
             const SizedBox(height: 16),
             _buttonRow(),
             const SizedBox(height: 12),
@@ -143,6 +122,110 @@ class _SyncViewState extends ConsumerState<SyncView> {
         ),
       ),
     );
+  }
+
+  Widget _hotspotCard(BuildContext context, HotspotSessionState hs) {
+    final controller = ref.read(hotspotSessionProvider.notifier);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Phone-to-phone hotspot',
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            if (hs.role == HotspotRole.idle) ...[
+              Row(children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.wifi_tethering),
+                    label: const Text('Start Hotspot'),
+                    onPressed: () => controller.startHost(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.wifi),
+                    label: const Text('Join Hotspot'),
+                    onPressed: () => _showJoinDialog(context),
+                  ),
+                ),
+              ]),
+            ],
+            if (hs.role == HotspotRole.host) ...[
+              SelectableText(
+                'SSID: ${hs.ssid}\nPassphrase: ${hs.passphrase}\nPeers: ${hs.peersConnected}',
+                style: const TextStyle(fontFamily: 'monospace'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.stop_circle),
+                label: const Text('Stop Hotspot'),
+                onPressed: () => controller.stopHost(),
+              ),
+            ],
+            if (hs.role == HotspotRole.joiner) ...[
+              SelectableText(
+                'Joined: ${hs.ssid}\nPeers: ${hs.peersConnected}',
+                style: const TextStyle(fontFamily: 'monospace'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.logout),
+                label: const Text('Leave'),
+                onPressed: () => controller.leave(),
+              ),
+            ],
+            if (hs.lastError != null) ...[
+              const SizedBox(height: 8),
+              Text('Error: ${hs.lastError!}',
+                  style: const TextStyle(color: Colors.redAccent)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showJoinDialog(BuildContext context) async {
+    final ssidCtl = TextEditingController();
+    final passCtl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Join hotspot'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: ssidCtl,
+              decoration: const InputDecoration(labelText: 'SSID'),
+            ),
+            TextField(
+              controller: passCtl,
+              decoration: const InputDecoration(labelText: 'Passphrase'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Connect'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && ssidCtl.text.isNotEmpty && passCtl.text.isNotEmpty) {
+      await ref
+          .read(hotspotSessionProvider.notifier)
+          .join(ssidCtl.text, passCtl.text);
+    }
   }
 
   Widget _apiCard(BuildContext context, String url) => Card(

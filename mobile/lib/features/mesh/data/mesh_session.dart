@@ -20,6 +20,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show immutable;
@@ -275,7 +276,7 @@ class MeshSession {
       _complete(completer);
       return;
     }
-    final want = [for (final id in req.wantIds) String.fromCharCodes(id)];
+    final want = [for (final id in req.wantIds) utf8.decode(id, allowMalformed: true)];
     _expectedAcks = want.length;
     for (var i = 0; i < want.length; i += config.maxItemsPerChunk) {
       final end = (i + config.maxItemsPerChunk) < want.length
@@ -303,7 +304,7 @@ class MeshSession {
         peerId: config.localPeerId,
       ),
       itemKind: kind,
-      jsonPayload: String.fromCharCodes(payload),
+      jsonPayload: utf8.decode(payload, allowMalformed: true),
     );
     await transport.send(data.encode());
     _sent++;
@@ -320,7 +321,7 @@ class MeshSession {
       return;
     }
     final id = _deriveId(data.itemKind, data.jsonPayload);
-    final payload = Uint8List.fromList(data.jsonPayload.codeUnits);
+    final payload = Uint8List.fromList(utf8.encode(data.jsonPayload));
     final item = MeshItem(
       kind: data.itemKind,
       id: id,
@@ -372,17 +373,19 @@ class MeshSession {
   String _deriveId(String kind, String json) {
     final m = _extractJson(json);
     if (kind == 'bulletin') {
-      return m['sha256'] as String? ?? m['id'] as String? ?? '';
+      return (m['sha256'] as String?) ?? (m['id'] as String?) ?? '';
     }
-    return m['id'] as String? ?? '';
+    return (m['id'] as String?) ?? '';
   }
 
-  static final RegExp _kvRegex =
-      RegExp(r'"(sha256|id)"\s*:\s*"([^"]+)"');
   Map<String, dynamic> _extractJson(String json) {
-    final match = _kvRegex.firstMatch(json);
-    if (match == null) return const <String, dynamic>{};
-    return <String, dynamic>{match.group(1)!: match.group(2)!};
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is! Map) return const <String, dynamic>{};
+      return decoded.cast<String, dynamic>();
+    } catch (_) {
+      return const <String, dynamic>{};
+    }
   }
 
   void _fail(String message, Completer<MeshSessionResult> completer) {

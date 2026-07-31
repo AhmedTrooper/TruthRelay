@@ -15,7 +15,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_p2p_connection/flutter_p2p_connection.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../src/mesh_discovery_backend.dart';
 
@@ -161,26 +160,3 @@ class WifiDirectDiscovery {
     await _backend.dispose();
   }
 }
-
-/// Riverpod entry points. `wifiDirectDiscoveryProvider` owns one
-/// `WifiDirectDiscovery` instance per app session; `meshPeersStreamProvider`
-/// is the broadcast stream the rest of the mesh subscribes to.
-final wifiDirectDiscoveryProvider = Provider<WifiDirectDiscovery>((ref) {
-  final d = WifiDirectDiscovery();
-  ref.onDispose(d.dispose);
-  return d;
-});
-
-final meshPeersStreamProvider = StreamProvider<List<MeshPeer>>((ref) {
-  final d = ref.watch(wifiDirectDiscoveryProvider);
-  // Start the discovery on first subscription; consumer UI does not need to
-  // call .start() explicitly.
-  unawaited(d.start());
-  ref.onDispose(d.stop);
-  return d.peers;
-});
-
-final meshDiscoveryStatusProvider = StreamProvider<DiscoveryStatus>((ref) {
-  final d = ref.watch(wifiDirectDiscoveryProvider);
-  return d.status;
-});

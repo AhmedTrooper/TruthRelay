@@ -14,6 +14,28 @@ Built in 72 hours by **TernaryOps** for the **Crisis Tech** track at
 
 ---
 
+## 📸 Application Screenshots
+
+### 💻 Web Admin (PC)
+
+![Web Admin Dashboard](./assets/PC/dashboard.png)
+
+| **Crisis Bulletins** | **Help Requests** |
+| :---: | :---: |
+| ![PC Bulletins](./assets/PC/bulletin.png) | ![PC Help Requests](./assets/PC/request.png) |
+
+| **Moderator Management** | **Mesh Synchronization** |
+| :---: | :---: |
+| ![PC Moderators](./assets/PC/moderators.png) | ![PC Sync](./assets/PC/sync.png) |
+
+### 📱 Mobile App (Android)
+
+| **Bulletins** | **Help Requests** | **Moderator Keys** | **Mesh Sync** |
+| :---: | :---: | :---: | :---: |
+| ![Mobile Bulletins](./assets/Mobile/bulletings.jpg) | ![Mobile Requests](./assets/Mobile/request.jpg) | ![Mobile Moderator](<./assets/Mobile/moderator_mobile'.jpg>) | ![Mobile Sync](./assets/Mobile/sync.jpg) |
+
+---
+
 ## ⚡ Getting Started (Run in 30 Seconds)
 
 ### Requirements & Environment
